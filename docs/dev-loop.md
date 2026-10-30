@@ -48,12 +48,13 @@ Themes work the same way. `pnpm dev enable codex Frost` sets `current_theme` and
 
 Other commands:
 
-| Command                           | What it does                                                                                                                                                                     |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev path`                   | Prints the userdata folder it will use.                                                                                                                                          |
-| `pnpm dev install [name…] --link` | Links instead of copying. Themes use a junction on Windows (no admin needed); extension files need Windows Developer Mode for links, and it falls back to copying if that's off. |
-| `pnpm dev disable spaces`         | `spicetify config extensions nordlys-spaces.js-` and apply.                                                                                                                      |
-| `--no-apply`                      | Skip `spicetify apply` after enable/disable.                                                                                                                                     |
+| Command                                | What it does                                                                                                                                                                     |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev path`                        | Prints the userdata folder it will use.                                                                                                                                          |
+| `pnpm dev open` / `pnpm dev open dist` | Opens the userdata folder, or the built files, in Finder / File Explorer.                                                                                                        |
+| `pnpm dev install [name…] --link`      | Links instead of copying. Themes use a junction on Windows (no admin needed); extension files need Windows Developer Mode for links, and it falls back to copying if that's off. |
+| `pnpm dev disable spaces`              | `spicetify config extensions nordlys-spaces.js-` and apply.                                                                                                                      |
+| `--no-apply`                           | Skip `spicetify apply` after enable/disable.                                                                                                                                     |
 
 Set `NORDLYS_SPICETIFY_USERDATA` to use a different folder (handy for a test profile).
 
