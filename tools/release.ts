@@ -166,4 +166,8 @@ for (const pkg of shipped) {
   released++;
 }
 await updateDistBranch(shipped);
-console.log(released ? `Released ${released} package(s).` : "Nothing new to release.");
+console.log(
+  released
+    ? `${dryRun ? "Would release" : "Released"} ${released} package(s).`
+    : "Nothing new to release.",
+);
