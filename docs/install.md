@@ -228,11 +228,46 @@ Then you can delete `nordlys-spaces.js` from the `Extensions` folder. Your space
 
 ## Troubleshooting
 
+### "Spotify version and backup version are mismatched"
+
+If `spicetify apply` (or `npm run dev -- enable …`) ends with:
+
+```
+warning  Spotify version and backup version are mismatched.
+info  Spotify cannot be backed up at this state. Please re-install Spotify then run "spicetify backup apply"
+```
+
+then **nothing was applied**: no extensions and no theme. Spotify updated itself after Spicetify last backed it up, and Spicetify won't patch it until the backup is redone. It happens after most Spotify updates. To fix it:
+
+1. Quit Spotify completely (⌘Q on macOS; on Windows, also from the tray icon).
+2. Update Spicetify, so it supports the newest Spotify:
+
+   ```bash
+   spicetify update
+   ```
+
+3. Reinstall Spotify from <https://www.spotify.com/download>. If you installed it with Homebrew on macOS:
+
+   ```bash
+   brew reinstall --cask spotify
+   ```
+
+4. Open Spotify once, log in, then quit it again.
+5. Back up the fresh Spotify and apply everything:
+
+   ```bash
+   spicetify backup apply
+   ```
+
+Your Nordlys settings (extensions, theme, color scheme) are already saved in Spicetify's config, so step 5 applies them. You don't need to run the Nordlys commands again.
+
+### Other problems
+
 | Problem                                   | Fix                                                                                                                                                                                                                       |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `spicetify: command not found`            | Spicetify isn't installed, or the terminal can't find it. Reinstall it, then open a new terminal window.                                                                                                                  |
 | `spicetify path userdata` prints an error | Use the usual folder: `~/.config/spicetify` on macOS and Linux, `%APPDATA%\spicetify` on Windows.                                                                                                                         |
 | No Spaces button after `apply`            | Run `spicetify config extensions` and check that `nordlys-spaces.js` is in the list. Then check that the file is in `Extensions` (not in a subfolder) and run `spicetify apply` again.                                    |
 | The theme doesn't change anything         | Check that the folder is `Themes/NordlysCodex/user.css` (not `Themes/NordlysCodex/NordlysCodex/…`), and run the `inject_css` command in step 4.                                                                           |
-| Spotify updated and everything is gone    | That's normal after a Spotify update. Run `spicetify backup apply`.                                                                                                                                                       |
+| Spotify updated and everything is gone    | See [the section above](#spotify-version-and-backup-version-are-mismatched).                                                                                                                                              |
 | Something else is wrong                   | Run `spicetify enable-devtools`, open Spotify's console (right-click → Inspect, or ⌥⌘I / Ctrl+Shift+I), run `localStorage.setItem("nordlys:debug","1")`, restart Spotify, and look for lines that start with `[nordlys:`. |

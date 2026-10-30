@@ -15,6 +15,7 @@ import { spawnSync } from "node:child_process";
 import { cp, lstat, mkdir, readdir, rm, symlink } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { build, DIST, listPackages, outputOf, type Pkg } from "./build";
 
 const isWindows = process.platform === "win32";
@@ -112,10 +113,33 @@ async function place(pkg: Pkg, root: string, link: boolean): Promise<string> {
   return target;
 }
 
+/** Why `spicetify apply` didn't finish, judged from its output (it can exit 0 on these). */
+export function applyProblem(ok: boolean, out: string): "backup" | "other" | null {
+  if (/mismatch|cannot be backed up|backup apply/i.test(out)) return "backup";
+  if (!ok || /\berror\b/i.test(out)) return "other";
+  return null;
+}
+
 function applyUnless(flags: string[]) {
   if (flags.includes("--no-apply")) return;
   console.log("Running spicetify apply…");
-  spicetify(["apply"]);
+  const { ok, out } = spicetify(["apply"]);
+  const problem = applyProblem(ok, out);
+  if (!problem) return;
+  process.exitCode = 1;
+  console.error("\n✗ spicetify apply didn't finish, so nothing was applied to Spotify.");
+  if (problem === "backup") {
+    console.error(`  Spotify updated itself since Spicetify last backed it up. To fix it:
+    1. Quit Spotify.
+    2. spicetify update
+    3. Reinstall Spotify from https://www.spotify.com/download (or: brew reinstall --cask spotify).
+    4. Open Spotify once, log in, then quit it.
+    5. spicetify backup apply
+  Your Nordlys settings are already saved in Spicetify's config; step 5 applies them.
+  See docs/install.md → Troubleshooting.`);
+  } else {
+    console.error("  Read Spicetify's messages above, fix that, then run: spicetify apply");
+  }
 }
 
 async function main() {
@@ -210,7 +234,9 @@ Names: ${(await select([])).map((p) => p.slug).join(", ")}`);
   }
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
+}
