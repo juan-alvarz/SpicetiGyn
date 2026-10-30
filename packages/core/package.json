@@ -8,6 +8,6 @@
     ".": "./src/index.ts"
   },
   "devDependencies": {
-    "@nordlys/spicetify-mock": "workspace:*"
+    "@nordlys/spicetify-mock": "*"
   }
 }

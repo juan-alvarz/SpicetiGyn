@@ -5,10 +5,10 @@
   "description": "Test-only plugin that drives Spaces over the bus, standing in for a future Focus timer.",
   "type": "module",
   "dependencies": {
-    "@nordlys/core": "workspace:*"
+    "@nordlys/core": "*"
   },
   "devDependencies": {
-    "@nordlys/spaces": "workspace:*"
+    "@nordlys/spaces": "*"
   },
   "nordlys": {
     "type": "test-extension",

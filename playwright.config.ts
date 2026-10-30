@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 // Runs the built bundles (dist/) against the Spicetify mock in Chromium, the engine Spotify's
-// desktop app uses. Build first with `pnpm build:test` (`pnpm test:e2e` does both).
+// desktop app uses. Build first with `npm run build:test` (`npm run test:e2e` does both).
 export default defineConfig({
   testDir: "tests/e2e",
   fullyParallel: true,

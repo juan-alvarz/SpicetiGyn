@@ -4,7 +4,7 @@
   "private": true,
   "description": "A terminal with a classical streak: monospace everywhere, hairlines instead of panels, a big italic serif for titles.",
   "devDependencies": {
-    "@nordlys/theme-kit": "workspace:*"
+    "@nordlys/theme-kit": "*"
   },
   "nordlys": {
     "type": "theme",

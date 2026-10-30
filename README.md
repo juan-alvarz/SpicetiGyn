@@ -32,15 +32,15 @@ docs/                    architecture, install, dev loop, styling contract, manu
 ## Quick start
 
 ```bash
-pnpm install
+npm install
 ```
 
 ```bash
-pnpm check
+npm run check
 ```
 
 ```bash
-pnpm dev install spaces && pnpm dev enable spaces
+npm run dev -- install spaces && npm run dev -- enable spaces
 ```
 
 ## What is tested where

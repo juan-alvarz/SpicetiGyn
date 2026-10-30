@@ -9,4 +9,4 @@ The small core every Nordlys plugin bundles. It is never installed on its own.
 - `ctx.player`, `ctx.nav`, `ctx.metadata`: adapters over Spotify/Spicetify internals that differ between versions, each with a logged fallback.
 - `ctx.platform`: OS detection and shortcut labels (⌘⌥ vs Ctrl+Alt).
 
-Only `src/compat/` reads the `Spicetify` global; `pnpm check:boundaries` enforces that. See [docs/architecture.md](../../docs/architecture.md).
+Only `src/compat/` reads the `Spicetify` global; `npm run check:boundaries` enforces that. See [docs/architecture.md](../../docs/architecture.md).

@@ -2,9 +2,14 @@
   "name": "nordlys",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.28.0",
+  "workspaces": [
+    "packages/*",
+    "plugins/*",
+    "themes/*",
+    "tests/fixtures/*"
+  ],
   "engines": {
-    "node": ">=20.19"
+    "node": ">=22.11"
   },
   "scripts": {
     "build": "tsx tools/build.ts",
@@ -17,8 +22,8 @@
     "check:boundaries": "tsx tools/check-boundaries.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "pnpm build:test && playwright test",
-    "check": "pnpm lint && pnpm typecheck && pnpm check:boundaries && pnpm test && pnpm build",
+    "test:e2e": "npm run build:test && playwright test",
+    "check": "npm run lint && npm run typecheck && npm run check:boundaries && npm test && npm run build",
     "changeset": "changeset",
     "version": "changeset version && biome format --write .",
     "release": "tsx tools/release.ts"

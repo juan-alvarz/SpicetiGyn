@@ -25,7 +25,7 @@ It should print a version number. If it says the command isn't found, install Sp
 
 ## Quick way (from the source code)
 
-You need [Node.js](https://nodejs.org) 20.19 or newer.
+You need [Node.js](https://nodejs.org) 22.11 or newer (the current LTS is fine). npm comes with it; nothing else to install.
 
 1. Download the code and go into its folder:
 
@@ -37,41 +37,43 @@ You need [Node.js](https://nodejs.org) 20.19 or newer.
    cd SpicetiGyn
    ```
 
-2. Set up the tools once. Corepack comes with Node.js and provides pnpm; `corepack disable` undoes it.
+   Until the first version is merged into `main`, switch to the development branch:
 
    ```bash
-   corepack enable
+   git checkout claude/dazzling-wozniak-5bbos9
    ```
 
+2. Download the build tools into the folder (once):
+
    ```bash
-   pnpm install
+   npm install
    ```
 
 3. Build everything and copy it into your Spicetify folder:
 
    ```bash
-   pnpm dev install
+   npm run dev -- install
    ```
 
 4. Turn on Spaces. Spotify restarts.
 
    ```bash
-   pnpm dev enable spaces
+   npm run dev -- enable spaces
    ```
 
 5. Optional: turn on a theme (pick one).
 
    ```bash
-   pnpm dev enable codex Bone
+   npm run dev -- enable codex Bone
    ```
 
    ```bash
-   pnpm dev enable spaces-theme FjordDusk
+   npm run dev -- enable spaces-theme FjordDusk
    ```
 
 Done. Jump to [Check that it worked](#check-that-it-worked).
 
-To look at the files yourself, `pnpm dev open` opens your Spicetify folder and `pnpm dev open dist` opens the built files.
+To look at the files yourself, `npm run dev -- open` opens your Spicetify folder and `npm run dev -- open dist` opens the built files.
 
 ---
 
@@ -120,7 +122,7 @@ Pick one:
 
 - **A. Spicetify Marketplace** (once released): open **Marketplace** in Spotify, search for **Nordlys**, click **Install**. That's all; skip the rest of this guide.
 - **B. A release download** (once released): from the [releases page](https://github.com/juan-alvarz/SpicetiGyn/releases), download `nordlys-spaces.js` and, for a theme, `NordlysCodex.zip` or `NordlysSpaces.zip`. Unzip the theme to get a folder.
-- **C. Build them yourself:** follow steps 1–2 of the [quick way](#quick-way-from-the-source-code), then run `pnpm build`. The files appear in the code folder:
+- **C. Build them yourself:** follow steps 1–2 of the [quick way](#quick-way-from-the-source-code), then run `npm run build`. The files appear in the code folder:
 
   ```
   SpicetiGyn/dist/
@@ -200,7 +202,7 @@ To change the scheme later, run only `spicetify config color_scheme Frost`, then
 
 ## Updating
 
-Replace the files from step 3 or 4 with the new ones, then run `spicetify apply`. With the quick way, run `git pull`, then `pnpm dev install`, then `spicetify apply`.
+Replace the files from step 3 or 4 with the new ones, then run `spicetify apply`. With the quick way, run `git pull`, then `npm run dev -- install`, then `spicetify apply`.
 
 ---
 
@@ -220,7 +222,7 @@ Then you can delete `nordlys-spaces.js` from the `Extensions` folder. Your space
 
 **A theme:** switch to another theme with `spicetify config current_theme <OtherTheme>`, run `spicetify apply`, and then delete the theme's folder from `Themes`.
 
-**The tools (quick way only):** run `corepack disable`, then delete the `SpicetiGyn` folder.
+**The tools (quick way only):** delete the `SpicetiGyn` folder. Everything `npm install` downloaded lives inside it.
 
 ---
 

@@ -21,7 +21,8 @@ Where the code differs from the proposal:
 - **Snapshots are also saved every 15 s while playing,** so a crash or force-quit loses little. `beforeunload` isn't reliable in Spotify.
 - **The popover opens below the whole top bar** (found with `.Root__globalNav` or a `header`), not just below the button.
 - **Bundle size:** `nordlys-spaces.js` is about 86 KB unminified. The core is about 34 KB of that, well over the 10–15 KB estimate, mostly because every adapter carries its fallbacks and log messages. The rest is Spaces itself (about 21 KB), its panel (17 KB), CSS (10 KB) and icons (2 KB). It is left readable on purpose; a second plugin adds another copy of the core, which is still small for a local file.
-- **Themes arrived in v0.1:** Nordlys Codex and the Nordlys Spaces theme (`themes/`), plus `packages/theme-kit` (shared platform rules) and `pnpm new:theme`. The theme for the Spaces look lives in `themes/spaces-theme` so it doesn't share a name with the plugin.
+- **Themes arrived in v0.1:** Nordlys Codex and the Nordlys Spaces theme (`themes/`), plus `packages/theme-kit` (shared platform rules) and `npm run new:theme --`. The theme for the Spaces look lives in `themes/spaces-theme` so it doesn't share a name with the plugin.
+- **npm instead of pnpm.** Pinning a pnpm version made an already-installed pnpm try to switch versions and fail, and pnpm wasn't needed for anything npm can't do.
 - **The Spicetify Panel API (right sidebar) is still planned for v1.1** and not built.
 
 ---
@@ -34,7 +35,7 @@ Where the code differs from the proposal:
 - **Every plugin is cleaned up by construction.** Each listener, DOM node, style, shortcut, menu item and bus subscription created through `ctx` is tracked and removed on teardown. The `setup` function only returns a teardown for anything extra it did by hand.
 - **Plain DOM, not Spotify's React,** for plugin UI. React would tie us to whichever React version Spotify ships. Plain DOM is easy to test in happy-dom and simple to clean up.
 - **Spaces v1:** top bar button and popover panel, "Add to space" context submenu, ⌘⌥/Ctrl+Alt 1–9, versioned storage, and the public commands `spaces.list`, `spaces.current` and `spaces.switchTo`.
-- **Tooling:** pnpm workspaces, esbuild driven by our own small build script, TypeScript strict, Vitest with happy-dom, Playwright, Biome, Changesets.
+- **Tooling:** npm workspaces, esbuild driven by our own small build script, TypeScript strict, Vitest with happy-dom, Playwright, Biome, Changesets.
 
 ---
 
@@ -96,7 +97,7 @@ Where the code differs from the proposal:
 ├─ manifest.json                Marketplace manifest, an array with one entry per plugin/theme
 ├─ biome.json
 ├─ tsconfig.base.json
-├─ pnpm-workspace.yaml
+├─ package-lock.json
 └─ package.json
 ```
 
@@ -114,7 +115,7 @@ Later, not now: `apps/hub/` (custom app) and `themes/<name>/`.
 How each rule is enforced:
 
 - **No `Spicetify` in plugins.** The core reads the global through `getSpicetify()` and never declares it with `declare global`. A plugin that writes `Spicetify.Player` gets a type error. `check-boundaries.ts` also catches `window.Spicetify` and `globalThis.Spicetify`.
-- **No runtime imports across plugins.** pnpm's strict `node_modules` already blocks undeclared packages. `check-boundaries.ts` fails CI if one plugin imports another unless the import is `import type … from "@nordlys/<x>/api"`. A type-only import disappears when compiled, so it creates no runtime coupling.
+- **No runtime imports across plugins.** `check-boundaries.ts` fails CI if one plugin imports another unless the import is `import type … from "@nordlys/<x>/api"`. A type-only import disappears when compiled, so it creates no runtime coupling.
 
 ## 3. Core API surface
 
@@ -450,17 +451,17 @@ switchTo(id):
 
 ## 9. Tooling
 
-| Tool                                      | Why                                                                                                                                                                                                          |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **pnpm** workspaces                       | Fast, strict `node_modules` that also enforce package boundaries, and good monorepo support.                                                                                                                 |
-| **esbuild** with our own `tools/build.ts` | One IIFE per plugin with CSS imported as text, `define` for version and debug flags, and watch mode, all in about 80 lines we fully control.                                                                 |
-| `spicetify-creator`: **not used**         | It brings its own templates and config, assumes one extension per project, doesn't support our standalone-plus-handshake layout, and is only lightly maintained. Nothing it does is hard to do with esbuild. |
-| **TypeScript strict**                     | Also `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsc -b` with project references, used for type checking only.                                                     |
-| **Vitest + happy-dom**                    | Fast, uses esbuild under the hood like our build, and has fake timers for fade and crossfade tests.                                                                                                          |
-| **Playwright** (Chromium)                 | Spotify's desktop app runs on Chromium (CEF), so this is the closest browser we can test in. It runs the built `.js` against the mock harness at 100%, 125% and 150% `deviceScaleFactor`.                    |
-| **Biome**                                 | One fast tool for lint and format, with no ESLint plus Prettier setup to maintain.                                                                                                                           |
-| **Changesets**                            | Per-package versions and CHANGELOGs. It also handles private (not on npm) packages and tags each release.                                                                                                    |
-| Release output                            | **Readable, not minified** bundles with a version banner. People audit extensions before installing them, and the bundles are small.                                                                         |
+| Tool                                      | Why                                                                                                                                                                                                              |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **npm** workspaces                        | Comes with Node, so contributors install nothing else. (v0.1 started on pnpm, whose version pinning clashed with an existing pnpm install; the boundary check covers what pnpm's stricter `node_modules` added.) |
+| **esbuild** with our own `tools/build.ts` | One IIFE per plugin with CSS imported as text, `define` for version and debug flags, and watch mode, all in about 80 lines we fully control.                                                                     |
+| `spicetify-creator`: **not used**         | It brings its own templates and config, assumes one extension per project, doesn't support our standalone-plus-handshake layout, and is only lightly maintained. Nothing it does is hard to do with esbuild.     |
+| **TypeScript strict**                     | Also `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsc -b` with project references, used for type checking only.                                                         |
+| **Vitest + happy-dom**                    | Fast, uses esbuild under the hood like our build, and has fake timers for fade and crossfade tests.                                                                                                              |
+| **Playwright** (Chromium)                 | Spotify's desktop app runs on Chromium (CEF), so this is the closest browser we can test in. It runs the built `.js` against the mock harness at 100%, 125% and 150% `deviceScaleFactor`.                        |
+| **Biome**                                 | One fast tool for lint and format, with no ESLint plus Prettier setup to maintain.                                                                                                                               |
+| **Changesets**                            | Per-package versions and CHANGELOGs. It also handles private (not on npm) packages and tags each release.                                                                                                        |
+| Release output                            | **Readable, not minified** bundles with a version banner. People audit extensions before installing them, and the bundles are small.                                                                             |
 
 ## 10. Pushback: what I'd cut or change for v1
 

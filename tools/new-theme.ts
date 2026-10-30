@@ -1,5 +1,5 @@
 /**
- * Scaffolds a new theme: pnpm new:theme <slug> ["Display name"]
+ * Scaffolds a new theme: npm run new:theme -- <slug> ["Display name"]
  *
  * Creates themes/<slug>/ with color.ini, src/user.css (importing the shared theme kit),
  * README, CHANGELOG and package.json, and adds a Marketplace entry to manifest.json.
@@ -13,7 +13,7 @@ const [slug, displayArg] = process.argv.slice(2);
 
 if (!slug || !/^[a-z][a-z0-9-]*$/.test(slug)) {
   console.error(
-    'Usage: pnpm new:theme <slug> ["Display name"]   (slug: lowercase letters, digits, dashes)',
+    'Usage: npm run new:theme -- <slug> ["Display name"]   (slug: lowercase letters, digits, dashes)',
   );
   process.exit(1);
 }
@@ -39,7 +39,7 @@ const files: Record<string, string> = {
       version: "0.1.0",
       private: true,
       description: `${name} theme for Spicetify.`,
-      devDependencies: { "@nordlys/theme-kit": "workspace:*" },
+      devDependencies: { "@nordlys/theme-kit": "*" },
       nordlys: { type: "theme", name, dir: dirName },
     },
     null,
@@ -113,7 +113,7 @@ const readme = await readFile(path.join(ROOT, "README.md"), "utf8");
 console.log(`Created themes/${slug}/ and added it to manifest.json.
 
 Next:
-  1. pnpm install            (links the theme kit)
+  1. npm install            (links the theme kit)
   2. edit themes/${slug}/color.ini and src/user.css
-  3. pnpm dev install ${slug} && pnpm dev enable ${slug}
+  3. npm run dev -- install ${slug} && npm run dev -- enable ${slug}
   4. add a preview.png (Marketplace requires one)${readme.includes(name) ? "" : `\n  5. list it in README.md`}`);

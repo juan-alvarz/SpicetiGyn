@@ -8,10 +8,10 @@
     "./api": "./src/api.ts"
   },
   "dependencies": {
-    "@nordlys/core": "workspace:*"
+    "@nordlys/core": "*"
   },
   "devDependencies": {
-    "@nordlys/spicetify-mock": "workspace:*"
+    "@nordlys/spicetify-mock": "*"
   },
   "nordlys": {
     "type": "extension",

@@ -1,12 +1,12 @@
 /**
  * Developer loop for macOS, Windows and Linux.
  *
- *   pnpm dev path                     print the Spicetify userdata folder
- *   pnpm dev open [dist]              open the userdata folder (or dist/) in Finder / Explorer
- *   pnpm dev install [name…] [--link] build, then copy (or link) into Extensions/ and Themes/
- *   pnpm dev watch [name…]            rebuild on change and copy into userdata each time
- *   pnpm dev enable <name> [scheme]   extension: spicetify config extensions <file>; theme: current_theme
- *   pnpm dev disable <name>           extension: spicetify config extensions <file>-
+ *   npm run dev -- path                     print the Spicetify userdata folder
+ *   npm run dev -- open [dist]              open the userdata folder (or dist/) in Finder / Explorer
+ *   npm run dev -- install [name…] [--link] build, then copy (or link) into Extensions/ and Themes/
+ *   npm run dev -- watch [name…]            rebuild on change and copy into userdata each time
+ *   npm run dev -- enable <name> [scheme]   extension: spicetify config extensions <file>; theme: current_theme
+ *   npm run dev -- disable <name>           extension: spicetify config extensions <file>-
  *
  * Names are package folder names: spaces, codex, … Set NORDLYS_SPICETIFY_USERDATA to override
  * the userdata folder. Add --no-apply to skip `spicetify apply` after enable/disable.
@@ -147,7 +147,7 @@ async function main() {
       const root = userdata();
       for (const pkg of pkgs)
         console.log(`  ${pkg.slug.padEnd(10)} ${await place(pkg, root, flags.includes("--link"))}`);
-      console.log(`\nInstalled. Turn one on with: pnpm dev enable <name>`);
+      console.log(`\nInstalled. Turn one on with: npm run dev -- enable <name>`);
       break;
     }
 
@@ -169,7 +169,7 @@ async function main() {
         await place(pkg, root, false);
       console.log("\nIn another terminal, run:  spicetify watch -e    (add -s for themes)");
       console.log(
-        "Spotify reloads each time a file changes. Theme CSS is rebuilt when you run pnpm dev install.",
+        "Spotify reloads each time a file changes. Theme CSS is rebuilt when you run npm run dev -- install.",
       );
       break;
     }
@@ -177,7 +177,7 @@ async function main() {
     case "enable":
     case "disable": {
       const [pkg] = await select(names.slice(0, 1));
-      if (!pkg || names.length === 0) throw new Error(`Usage: pnpm dev ${command} <name>`);
+      if (!pkg || names.length === 0) throw new Error(`Usage: npm run dev -- ${command} <name>`);
       if (pkg.nordlys.type === "extension") {
         const file = pkg.nordlys.outfile as string;
         spicetify(["config", "extensions", command === "enable" ? file : `${file}-`]);
@@ -199,12 +199,12 @@ async function main() {
 
     default:
       console.log(`Usage:
-  pnpm dev path
-  pnpm dev open [dist]
-  pnpm dev install [name…] [--link]
-  pnpm dev watch [name…]
-  pnpm dev enable <name> [scheme] [--no-apply]
-  pnpm dev disable <name> [--no-apply]
+  npm run dev -- path
+  npm run dev -- open [dist]
+  npm run dev -- install [name…] [--link]
+  npm run dev -- watch [name…]
+  npm run dev -- enable <name> [scheme] [--no-apply]
+  npm run dev -- disable <name> [--no-apply]
 
 Names: ${(await select([])).map((p) => p.slug).join(", ")}`);
   }

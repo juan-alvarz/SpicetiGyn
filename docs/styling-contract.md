@@ -74,7 +74,7 @@ The Nordlys Spaces theme does exactly this, and follows the space colors through
 
 ## Rules for Nordlys themes
 
-These come from the "Both systems" study. The theme kit (`packages/theme-kit/base.css`) implements the shared parts, and `pnpm check:boundaries` enforces the first one.
+These come from the "Both systems" study. The theme kit (`packages/theme-kit/base.css`) implements the shared parts, and `npm run check:boundaries` enforces the first one.
 
 1. Never override `-webkit-app-region`.
 2. Never place anything in the top bar corners: macOS draws the traffic lights at the left, Windows its window buttons at the right.
