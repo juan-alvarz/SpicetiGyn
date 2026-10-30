@@ -6,6 +6,9 @@
  * Works on its own (gradient from color.ini). With the Spaces extension installed it follows
  * the current space through the documented styling contract (--nl-space-*), and fades
  * between spaces. It never requires the extension.
+ *
+ * Selectors: each rule lists the hooks Spotify 1.3.x has (ids, data-testid, ARIA roles, the
+ * plain .Root class) first, then the .Root__* / .main-* names older Spotify versions had.
  */
 @import url("https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&display=swap");
 @import "@nordlys/theme-kit/base.css";
@@ -41,6 +44,8 @@
   --sp-g1: var(--nl-space-g1, var(--spice-g1));
   --sp-g2: var(--nl-space-g2, var(--spice-g2));
   --sp-g3: var(--nl-space-g3, var(--spice-g3));
+  /* The card color is captured here, before --spice-main is made transparent below. */
+  --sp-card: var(--spice-main);
   --sp-glass: rgba(255, 255, 255, 0.1);
   --sp-glass-strong: rgba(255, 255, 255, 0.16);
   --sp-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -76,30 +81,27 @@ body :where(button, input, textarea, h1, h2, h3, p, span, a):not([class*="spotic
   font-family: var(--sp-font) !important;
 }
 
-.main-entityHeader-title h1,
-[data-testid="entityTitle"] h1 {
+:is([data-testid="entityTitle"], .main-entityHeader-title) :is(h1, span) {
   font-weight: 700;
   letter-spacing: -0.04em;
 }
 
-/* The window: grain over three glows over the base color. Grain is an inline SVG, so it
-   stays sharp at any display scaling. */
-body,
-.Root__top-container {
+/* The window: grain over three glows over the base color. It goes on the layout root,
+   because the root paints over <body> once Spotify has loaded. The grain is an inline SVG,
+   so it stays sharp at any display scaling. */
+:is(body, #main, .Root, .Root__top-container) {
   background-color: var(--sp-g0) !important;
   background-image:
     var(--sp-grain), radial-gradient(820px 640px at 0% 0%, var(--sp-g1), transparent 62%),
     radial-gradient(760px 700px at 100% 12%, var(--sp-g2), transparent 62%),
     radial-gradient(900px 560px at 45% 112%, var(--sp-g3), transparent 64%) !important;
-  background-attachment: fixed;
+  background-attachment: fixed !important;
 }
 
-/* Everything except the main view sits straight on the gradient. */
-.Root__globalNav,
-.Root__nav-bar,
-.Root__right-sidebar,
-.Root__now-playing-bar {
-  background: transparent !important;
+/* Everything except the main view sits straight on the gradient: Spotify's surface colors
+   become transparent inside the layout… */
+:is(.Root, .Root__top-container),
+:is(.Root, .Root__top-container) .encore-dark-theme {
   --background-base: transparent;
   --background-highlight: var(--sp-glass);
   --background-press: var(--sp-glass-strong);
@@ -107,17 +109,36 @@ body,
   --background-elevated-highlight: var(--sp-glass-strong);
   --background-tinted-base: var(--sp-glass);
   --background-tinted-highlight: var(--sp-glass-strong);
+  --spice-main: transparent;
+  --spice-sidebar: transparent;
+  --spice-player: transparent;
 }
 
-.Root__nav-bar *,
-.Root__right-sidebar * {
-  --background-base: transparent;
+:is(.Root, .Root__top-container) > *,
+:is(
+  #global-nav-bar,
+  [data-testid="topbar"],
+  #Desktop_LeftSidebar_Id,
+  #Desktop_PanelContainer_Id,
+  [data-testid="now-playing-bar"],
+  .Root__globalNav,
+  .Root__nav-bar,
+  .Root__right-sidebar,
+  .Root__now-playing-bar
+) {
+  background-color: transparent !important;
 }
 
-/* The floating card. */
-.Root__main-view {
+/* …and the main view is the one floating card, back on the theme's card color. */
+:is(.main-view-container, .Root__main-view),
+:is(.main-view-container, .Root__main-view) .encore-dark-theme {
+  --background-base: var(--sp-card);
+  --spice-main: var(--sp-card);
+}
+
+:is(.main-view-container, .Root__main-view) {
   border-radius: 12px !important;
-  background: var(--spice-main) !important;
+  background-color: var(--sp-card) !important;
   box-shadow:
     0 0 0 1px rgba(0, 0, 0, 0.28),
     0 20px 44px -18px rgba(0, 0, 0, 0.7);
@@ -133,44 +154,41 @@ body,
   ) !important;
 }
 
-.main-entityHeader-overlay,
-.main-actionBarBackground-background {
+:is(.main-entityHeader-overlay, .main-actionBarBackground-background) {
   background: none !important;
 }
 
 /* Search reads like a command bar. */
-.main-globalNav-searchContainer input,
-[data-testid="search-input"] {
+:is(#global-nav-bar, .Root__globalNav)
+  :is(input[type="search"], [data-testid="search-input"], [role="combobox"]) {
   border-radius: 10px !important;
-  background: var(--sp-glass-strong) !important;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
 }
 
-/* Library rows as soft pills; the open item turns light, as in the design study. */
-.main-yourLibraryX-listItem [role="group"],
-.main-yourLibraryX-listItem > div {
+/* Library rows as soft pills. */
+:is(#Desktop_LeftSidebar_Id, .Root__nav-bar)
+  :is([data-encore-id="listRow"], .main-yourLibraryX-listItem > div) {
   border-radius: 9px;
-}
-
-.main-yourLibraryX-listItem [aria-current="page"],
-.main-yourLibraryX-listItem .main-yourLibraryX-listItemSelected {
-  background: rgba(255, 255, 255, 0.9) !important;
-  color: #16161b !important;
 }
 
 /* Track rows */
-.main-trackList-trackListRow {
+:is([role="row"], .main-trackList-trackListRow) {
   border-radius: 9px;
 }
 
-.main-trackList-trackListRow.main-trackList-selected,
-.main-trackList-trackListRow[aria-selected="true"] {
+:is([role="row"], .main-trackList-trackListRow):is(
+  [aria-selected="true"],
+  .main-trackList-selected
+) {
   background: color-mix(in srgb, var(--spice-button) 15%, transparent) !important;
 }
 
 /* Cover art gets a little depth. */
-.main-entityHeader-imageContainer img,
-.main-nowPlayingWidget-coverArt img {
+:is(
+    [data-testid="playlist-image"],
+    [data-testid="cover-art-container"],
+    .main-entityHeader-imageContainer
+  )
+  img {
   border-radius: 10px;
   box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.75);
 }

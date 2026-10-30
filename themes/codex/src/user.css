@@ -6,6 +6,9 @@
  * No blur and no transparency, so it renders the same on macOS and Windows.
  * The two-tone dithered artwork from the design study needs an extension; this theme
  * ships the CSS-only grayscale fallback.
+ *
+ * Selectors: each rule lists the hooks Spotify 1.3.x has (ids, data-testid, ARIA roles, the
+ * plain .Root class) first, then the .Root__* / .main-* names older Spotify versions had.
  */
 @import url("https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Martian+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap");
 @import "@nordlys/theme-kit/base.css";
@@ -35,18 +38,15 @@ body
 }
 
 /* Titles: big italic serif. */
-.main-entityHeader-title h1,
-[data-testid="entityTitle"] h1 {
+:is([data-testid="entityTitle"], .main-entityHeader-title) :is(h1, span) {
   font-family: var(--codex-serif) !important;
   font-style: italic;
   font-weight: 500;
   letter-spacing: -0.02em;
 }
 
-/* Section labels: small caps mono. */
-.main-shelf-title,
-.main-trackList-trackListHeaderRow,
-.main-yourLibraryX-collapseButton span {
+/* Column headers and section labels: small caps mono. */
+:is([role="columnheader"], .main-trackList-trackListHeaderRow, .main-shelf-title) {
   font-family: var(--codex-label) !important;
   font-size: 10px !important;
   font-weight: 500;
@@ -55,75 +55,87 @@ body
   color: var(--spice-subtext);
 }
 
-/* One surface, divided by hairlines instead of gaps and panels. */
-.Root__top-container {
+/* One surface, divided by hairlines instead of gaps and floating panels. */
+:is(.Root, .Root__top-container) {
   --panel-gap: 0px;
-  gap: 0 !important;
-  padding: 0 !important;
-  background: var(--spice-main);
-}
-
-.Root__nav-bar,
-.Root__main-view,
-.Root__right-sidebar,
-.Root__now-playing-bar,
-.Root__globalNav {
-  border-radius: 0 !important;
   background: var(--spice-main) !important;
 }
 
-.Root__globalNav {
+:is(
+  #global-nav-bar,
+  #Desktop_LeftSidebar_Id,
+  #main-view,
+  .main-view-container,
+  #Desktop_PanelContainer_Id,
+  [data-testid="now-playing-bar"],
+  .Root__globalNav,
+  .Root__nav-bar,
+  .Root__main-view,
+  .Root__right-sidebar,
+  .Root__now-playing-bar
+) {
+  border-radius: 0 !important;
+  background-color: var(--spice-main) !important;
+}
+
+:is(#global-nav-bar, .Root__globalNav) {
   border-bottom: 1px solid var(--codex-line);
 }
 
-.Root__nav-bar {
+:is(#Desktop_LeftSidebar_Id, .Root__nav-bar) {
   border-right: 1px solid var(--codex-line);
 }
 
-.Root__right-sidebar {
+:is(#Desktop_PanelContainer_Id, .Root__right-sidebar) {
   border-left: 1px solid var(--codex-line);
 }
 
-.Root__now-playing-bar {
+:is([data-testid="now-playing-bar"], .Root__now-playing-bar) {
   border-top: 1px solid var(--codex-line);
 }
 
-/* No gradients behind headers. */
-.main-entityHeader-backgroundColor,
-.main-entityHeader-overlay,
-.main-actionBarBackground-background,
-.main-home-homeHeader {
+/* No colored gradients behind page headers. */
+:is(
+  [data-testid="entity-header"],
+  [data-testid="action-bar"],
+  .main-entityHeader-backgroundColor,
+  .main-entityHeader-overlay,
+  .main-actionBarBackground-background,
+  .main-home-homeHeader
+) {
   background: none !important;
+  background-color: transparent !important;
 }
 
-/* Square corners. Plugin UI (.nl-*) lives outside the Root container and keeps its own. */
-.Root__top-container :where(*) {
+/* Square corners everywhere inside Spotify's layout. Plugin UI (.nl-*) lives outside it. */
+:is(.Root, .Root__top-container) :where(*) {
   border-radius: 0 !important;
 }
 
 /* Artwork in two tones of gray. */
-.Root__top-container img[src*="scdn.co"],
-.Root__top-container img[src*="spotifycdn.com"] {
+:is(.Root, .Root__top-container) :is(img[src*="scdn.co"], img[src*="spotifycdn.com"]) {
   filter: grayscale(1) contrast(1.15);
 }
 
-/* Selected row is inverted; the playing row uses the accent. */
-.main-trackList-trackListRow.main-trackList-selected,
-.main-trackList-trackListRow[aria-selected="true"] {
+/* Selected row is inverted; hovered rows get a faint wash. */
+:is([role="row"], .main-trackList-trackListRow):is(
+  [aria-selected="true"],
+  .main-trackList-selected
+) {
   background: var(--spice-text) !important;
-}
-
-.main-trackList-trackListRow.main-trackList-selected *,
-.main-trackList-trackListRow[aria-selected="true"] * {
   color: var(--spice-main) !important;
 }
 
-.main-trackList-trackListRow:hover {
+:is([role="row"], .main-trackList-trackListRow):is([aria-selected="true"], .main-trackList-selected)
+  * {
+  color: var(--spice-main) !important;
+}
+
+:is([role="row"], .main-trackList-trackListRow):hover {
   background: rgba(var(--spice-rgb-text), 0.06) !important;
 }
 
-/* Buttons as flat blocks, not pills. */
-.main-playButton-PlayButton button,
-.encore-bright-accent-set {
+/* Buttons as flat blocks, not glowing pills. */
+:is([data-encore-id="buttonPrimary"], .main-playButton-PlayButton button) {
   box-shadow: none !important;
 }

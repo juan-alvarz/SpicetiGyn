@@ -23,6 +23,7 @@ Where the code differs from the proposal:
 - **Bundle size:** `nordlys-spaces.js` is about 86 KB unminified. The core is about 34 KB of that, well over the 10–15 KB estimate, mostly because every adapter carries its fallbacks and log messages. The rest is Spaces itself (about 21 KB), its panel (17 KB), CSS (10 KB) and icons (2 KB). It is left readable on purpose; a second plugin adds another copy of the core, which is still small for a local file.
 - **Themes arrived in v0.1:** Nordlys Codex and the Nordlys Spaces theme (`themes/`), plus `packages/theme-kit` (shared platform rules) and `npm run new:theme --`. The theme for the Spaces look lives in `themes/spaces-theme` so it doesn't share a name with the plugin.
 - **npm instead of pnpm.** Pinning a pnpm version made an already-installed pnpm try to switch versions and fail, and pnpm wasn't needed for anything npm can't do.
+- **Spotify 1.3.x drops the readable class names.** With Spicetify 2.46.4 and Spotify 1.3.6 there is no `.Root__*` / `.main-*` layout class, and Spicetify's `Topbar.Button` never attaches. Themes now target ids, `data-testid`, ARIA roles and the plain `.Root` class first, with the old names as fallbacks. Spaces has a sidebar switcher (`ui.slot("left-sidebar-bottom")`), currently on hold after a first try in real Spotify.
 - **The Spicetify Panel API (right sidebar) is still planned for v1.1** and not built.
 
 ---
