@@ -1,0 +1,14 @@
+{
+  "name": "@nordlys/theme-spaces",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Spotify as a browser-style workspace: a grainy gradient window with the main view floating on it as a card. Follows your space's colors when the Spaces extension is installed.",
+  "devDependencies": {
+    "@nordlys/theme-kit": "workspace:*"
+  },
+  "nordlys": {
+    "type": "theme",
+    "name": "Nordlys Spaces theme",
+    "dir": "NordlysSpaces"
+  }
+}

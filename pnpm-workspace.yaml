@@ -1,0 +1,8 @@
+packages:
+  - packages/*
+  - plugins/*
+  - themes/*
+  - tests/fixtures/*
+
+onlyBuiltDependencies:
+  - esbuild

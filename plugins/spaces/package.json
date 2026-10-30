@@ -1,0 +1,22 @@
+{
+  "name": "@nordlys/spaces",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Arc-style spaces for Spotify: each space keeps its own playlists, colors, last page and what it was playing.",
+  "type": "module",
+  "exports": {
+    "./api": "./src/api.ts"
+  },
+  "dependencies": {
+    "@nordlys/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@nordlys/spicetify-mock": "workspace:*"
+  },
+  "nordlys": {
+    "type": "extension",
+    "name": "Spaces",
+    "entry": "src/entry.ts",
+    "outfile": "nordlys-spaces.js"
+  }
+}

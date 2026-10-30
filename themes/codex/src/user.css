@@ -1,0 +1,129 @@
+/*
+ * Nordlys Codex — "a terminal with a classical streak".
+ * One dark surface divided by hairlines, monospace type, a big italic serif for titles,
+ * square corners, and artwork reduced to grayscale.
+ *
+ * No blur and no transparency, so it renders the same on macOS and Windows.
+ * The two-tone dithered artwork from the design study needs an extension; this theme
+ * ships the CSS-only grayscale fallback.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Martian+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap");
+@import "@nordlys/theme-kit/base.css";
+
+:root {
+  --codex-mono: "Fragment Mono", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  --codex-label: "Martian Mono", ui-monospace, Menlo, Consolas, monospace;
+  --codex-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --codex-line: rgba(var(--spice-rgb-text), 0.15);
+}
+
+/* Type: monospace everywhere, except Spotify's icon font. */
+.encore-dark-theme,
+.encore-dark-theme .encore-base-set {
+  --encore-body-font-stack: var(--codex-mono);
+  --encore-title-font-stack: var(--codex-mono);
+  --encore-variable-font-stack: var(--codex-mono);
+}
+
+body,
+body
+  :where(button, input, textarea, select, h1, h2, h3, h4, p, span, a, div):not(
+    [class*="spoticon"]
+  ) {
+  font-family: var(--codex-mono) !important;
+  letter-spacing: 0;
+}
+
+/* Titles: big italic serif. */
+.main-entityHeader-title h1,
+[data-testid="entityTitle"] h1 {
+  font-family: var(--codex-serif) !important;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Section labels: small caps mono. */
+.main-shelf-title,
+.main-trackList-trackListHeaderRow,
+.main-yourLibraryX-collapseButton span {
+  font-family: var(--codex-label) !important;
+  font-size: 10px !important;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--spice-subtext);
+}
+
+/* One surface, divided by hairlines instead of gaps and panels. */
+.Root__top-container {
+  --panel-gap: 0px;
+  gap: 0 !important;
+  padding: 0 !important;
+  background: var(--spice-main);
+}
+
+.Root__nav-bar,
+.Root__main-view,
+.Root__right-sidebar,
+.Root__now-playing-bar,
+.Root__globalNav {
+  border-radius: 0 !important;
+  background: var(--spice-main) !important;
+}
+
+.Root__globalNav {
+  border-bottom: 1px solid var(--codex-line);
+}
+
+.Root__nav-bar {
+  border-right: 1px solid var(--codex-line);
+}
+
+.Root__right-sidebar {
+  border-left: 1px solid var(--codex-line);
+}
+
+.Root__now-playing-bar {
+  border-top: 1px solid var(--codex-line);
+}
+
+/* No gradients behind headers. */
+.main-entityHeader-backgroundColor,
+.main-entityHeader-overlay,
+.main-actionBarBackground-background,
+.main-home-homeHeader {
+  background: none !important;
+}
+
+/* Square corners. Plugin UI (.nl-*) lives outside the Root container and keeps its own. */
+.Root__top-container :where(*) {
+  border-radius: 0 !important;
+}
+
+/* Artwork in two tones of gray. */
+.Root__top-container img[src*="scdn.co"],
+.Root__top-container img[src*="spotifycdn.com"] {
+  filter: grayscale(1) contrast(1.15);
+}
+
+/* Selected row is inverted; the playing row uses the accent. */
+.main-trackList-trackListRow.main-trackList-selected,
+.main-trackList-trackListRow[aria-selected="true"] {
+  background: var(--spice-text) !important;
+}
+
+.main-trackList-trackListRow.main-trackList-selected *,
+.main-trackList-trackListRow[aria-selected="true"] * {
+  color: var(--spice-main) !important;
+}
+
+.main-trackList-trackListRow:hover {
+  background: rgba(var(--spice-rgb-text), 0.06) !important;
+}
+
+/* Buttons as flat blocks, not pills. */
+.main-playButton-PlayButton button,
+.encore-bright-accent-set {
+  box-shadow: none !important;
+}

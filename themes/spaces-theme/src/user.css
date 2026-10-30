@@ -1,0 +1,176 @@
+/*
+ * Nordlys Spaces — "Spotify as a browser-style workspace".
+ * The window is a grainy gradient; the library, top bar, player and right sidebar sit
+ * straight on it, and only the main view is a card floating with a soft shadow.
+ *
+ * Works on its own (gradient from color.ini). With the Spaces extension installed it follows
+ * the current space through the documented styling contract (--nl-space-*), and fades
+ * between spaces. It never requires the extension.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&display=swap");
+@import "@nordlys/theme-kit/base.css";
+
+/* Registered so the gradient can fade between spaces instead of jumping. */
+@property --sp-g0 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0f1a2b;
+}
+
+@property --sp-g1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2a7d90;
+}
+
+@property --sp-g2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #3d47a3;
+}
+
+@property --sp-g3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #164a5c;
+}
+
+:root {
+  --sp-font: "Familjen Grotesk", system-ui, sans-serif;
+  --sp-g0: var(--nl-space-base, var(--spice-g0));
+  --sp-g1: var(--nl-space-g1, var(--spice-g1));
+  --sp-g2: var(--nl-space-g2, var(--spice-g2));
+  --sp-g3: var(--nl-space-g3, var(--spice-g3));
+  --sp-glass: rgba(255, 255, 255, 0.1);
+  --sp-glass-strong: rgba(255, 255, 255, 0.16);
+  --sp-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  transition:
+    --sp-g0 1.1s ease,
+    --sp-g1 1.1s ease,
+    --sp-g2 1.1s ease,
+    --sp-g3 1.1s ease;
+}
+
+/* With the Spaces extension, buttons and highlights take the space's accent. */
+html[data-nl-space] {
+  --spice-button: var(--nl-space-accent);
+  --spice-button-active: var(--nl-space-accent);
+  --spice-rgb-button: var(--nl-space-accent-rgb);
+}
+
+/* The theme paints the window itself, so the extension's optional tint isn't needed. */
+html[data-nl-tint] .nl-tint {
+  display: none;
+}
+
+/* Type */
+.encore-dark-theme,
+.encore-dark-theme .encore-base-set {
+  --encore-body-font-stack: var(--sp-font);
+  --encore-title-font-stack: var(--sp-font);
+  --encore-variable-font-stack: var(--sp-font);
+}
+
+body,
+body :where(button, input, textarea, h1, h2, h3, p, span, a):not([class*="spoticon"]) {
+  font-family: var(--sp-font) !important;
+}
+
+.main-entityHeader-title h1,
+[data-testid="entityTitle"] h1 {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+/* The window: grain over three glows over the base color. Grain is an inline SVG, so it
+   stays sharp at any display scaling. */
+body,
+.Root__top-container {
+  background-color: var(--sp-g0) !important;
+  background-image:
+    var(--sp-grain), radial-gradient(820px 640px at 0% 0%, var(--sp-g1), transparent 62%),
+    radial-gradient(760px 700px at 100% 12%, var(--sp-g2), transparent 62%),
+    radial-gradient(900px 560px at 45% 112%, var(--sp-g3), transparent 64%) !important;
+  background-attachment: fixed;
+}
+
+/* Everything except the main view sits straight on the gradient. */
+.Root__globalNav,
+.Root__nav-bar,
+.Root__right-sidebar,
+.Root__now-playing-bar {
+  background: transparent !important;
+  --background-base: transparent;
+  --background-highlight: var(--sp-glass);
+  --background-press: var(--sp-glass-strong);
+  --background-elevated-base: var(--sp-glass);
+  --background-elevated-highlight: var(--sp-glass-strong);
+  --background-tinted-base: var(--sp-glass);
+  --background-tinted-highlight: var(--sp-glass-strong);
+}
+
+.Root__nav-bar *,
+.Root__right-sidebar * {
+  --background-base: transparent;
+}
+
+/* The floating card. */
+.Root__main-view {
+  border-radius: 12px !important;
+  background: var(--spice-main) !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 20px 44px -18px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+/* The header glow inside the card picks up the first glow color. */
+.main-entityHeader-backgroundColor {
+  background: radial-gradient(
+    680px 260px at 18% 0%,
+    color-mix(in srgb, var(--sp-g1) 30%, transparent),
+    transparent 70%
+  ) !important;
+}
+
+.main-entityHeader-overlay,
+.main-actionBarBackground-background {
+  background: none !important;
+}
+
+/* Search reads like a command bar. */
+.main-globalNav-searchContainer input,
+[data-testid="search-input"] {
+  border-radius: 10px !important;
+  background: var(--sp-glass-strong) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Library rows as soft pills; the open item turns light, as in the design study. */
+.main-yourLibraryX-listItem [role="group"],
+.main-yourLibraryX-listItem > div {
+  border-radius: 9px;
+}
+
+.main-yourLibraryX-listItem [aria-current="page"],
+.main-yourLibraryX-listItem .main-yourLibraryX-listItemSelected {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #16161b !important;
+}
+
+/* Track rows */
+.main-trackList-trackListRow {
+  border-radius: 9px;
+}
+
+.main-trackList-trackListRow.main-trackList-selected,
+.main-trackList-trackListRow[aria-selected="true"] {
+  background: color-mix(in srgb, var(--spice-button) 15%, transparent) !important;
+}
+
+/* Cover art gets a little depth. */
+.main-entityHeader-imageContainer img,
+.main-nowPlayingWidget-coverArt img {
+  border-radius: 10px;
+  box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.75);
+}

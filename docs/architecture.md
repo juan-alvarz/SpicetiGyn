@@ -1,8 +1,28 @@
 # Nordlys: architecture proposal
 
-Status: **proposal, waiting for approval**. Nothing below is built yet.
+Status: **approved and implemented in v0.1**. The proposal is kept below as written; the section right after this one lists every place where the implementation differs from it.
 
-This document answers step 1 of the kickoff: repo structure, package boundaries, the core API, the plugin lifecycle, standalone vs shared builds, the event bus, the styling contract, storage and migrations, and tooling. Section 10 lists where I push back on the original idea, and section 14 lists the questions I need you to answer.
+This document covers the repo structure, package boundaries, the core API, the plugin lifecycle, standalone vs shared builds, the event bus, the styling contract, storage and migrations, and tooling. Section 10 lists where the original idea was trimmed for a first version.
+
+## Implementation notes (v0.1)
+
+Decisions on the open questions (section 14):
+
+- **Items can be in several spaces.** "Add to space" adds; the panel's **⋯** menu moves or removes.
+- **The window tint is off by default.**
+- **Naming:** packages are `@nordlys/*`, files `nordlys-*.js`, CSS prefix `nl-`.
+- **The v0.1 prototype file wasn't in the repo,** so the port follows this document, the "Your spaces" prototype and the sketch in the design study. The version 0 → 1 migration reads the sketch's shape from `nordlys:spaces`; check it against `reference/nordlys-spaces.js` once that file is added (`plugins/spaces/src/model/migrations.ts`, marked TODO).
+
+Where the code differs from the proposal:
+
+- **Metadata adapter added** (`ctx.metadata`). The right-click menu only gives URIs, so names and covers are looked up once when an item is added (`PlaylistAPI.getMetadata`, GraphQL `getAlbum` / `queryArtistOverview`), never while drawing. If the lookup fails, the item shows "Playlist"/"Album"/"Artist" and the name is retried the next time the panel opens.
+- **`SwitchResult`** has `reason: "failed"` instead of `"playback-failed"`. When playback can't resume, the switch still succeeds with `resumed: false`; `"failed"` means the switch itself threw.
+- **`ui.button`** instead of `ui.topbarButton`, because it falls back to a player bar button. **`ui.contextSubmenu`** takes `items()` and returns a handle with `refresh()`, because Spicetify menus can't compute items lazily.
+- **Snapshots are also saved every 15 s while playing,** so a crash or force-quit loses little. `beforeunload` isn't reliable in Spotify.
+- **The popover opens below the whole top bar** (found with `.Root__globalNav` or a `header`), not just below the button.
+- **Bundle size:** `nordlys-spaces.js` is about 86 KB unminified. The core is about 34 KB of that, well over the 10–15 KB estimate, mostly because every adapter carries its fallbacks and log messages. The rest is Spaces itself (about 21 KB), its panel (17 KB), CSS (10 KB) and icons (2 KB). It is left readable on purpose; a second plugin adds another copy of the core, which is still small for a local file.
+- **Themes arrived in v0.1:** Nordlys Codex and the Nordlys Spaces theme (`themes/`), plus `packages/theme-kit` (shared platform rules) and `pnpm new:theme`. The theme for the Spaces look lives in `themes/spaces-theme` so it doesn't share a name with the plugin.
+- **The Spicetify Panel API (right sidebar) is still planned for v1.1** and not built.
 
 ---
 
@@ -84,12 +104,12 @@ Later, not now: `apps/hub/` (custom app) and `themes/<name>/`.
 
 ## 2. Package boundaries
 
-| Package | May import | Never imports | Ships as |
-|---|---|---|---|
-| `@nordlys/core` | nothing at runtime | plugins | bundled inside each plugin |
-| `@nordlys/spicetify-mock` | core types | plugins | dev only |
-| `@nordlys/<plugin>` | `@nordlys/core`; `import type` from `@nordlys/<other>/api` | another plugin's runtime code, `Spicetify` | `nordlys-<plugin>.js` |
-| themes | nothing (CSS + `color.ini`) | — | `user.css`, `color.ini` |
+| Package                   | May import                                                 | Never imports                              | Ships as                   |
+| ------------------------- | ---------------------------------------------------------- | ------------------------------------------ | -------------------------- |
+| `@nordlys/core`           | nothing at runtime                                         | plugins                                    | bundled inside each plugin |
+| `@nordlys/spicetify-mock` | core types                                                 | plugins                                    | dev only                   |
+| `@nordlys/<plugin>`       | `@nordlys/core`; `import type` from `@nordlys/<other>/api` | another plugin's runtime code, `Spicetify` | `nordlys-<plugin>.js`      |
+| themes                    | nothing (CSS + `color.ini`)                                | —                                          | `user.css`, `color.ini`    |
 
 How each rule is enforced:
 
@@ -103,25 +123,28 @@ How each rule is enforced:
 export type Teardown = () => void | Promise<void>;
 
 export interface PluginDefinition {
-  id: string;                    // "spaces": used for storage keys, CSS, logs
-  name: string;                  // "Spaces"
-  version: string;               // injected at build time
+  id: string; // "spaces": used for storage keys, CSS, logs
+  name: string; // "Spaces"
+  version: string; // injected at build time
   setup(ctx: PluginContext): void | Teardown | Promise<void | Teardown>;
 }
 export function definePlugin(def: PluginDefinition): PluginDefinition;
-export function start(def: PluginDefinition, opts?: { spicetify?: SpicetifyLike }): Promise<RunningPlugin>;
+export function start(
+  def: PluginDefinition,
+  opts?: { spicetify?: SpicetifyLike },
+): Promise<RunningPlugin>;
 
 export interface RunningPlugin {
   readonly id: string;
   readonly version: string;
-  stop(): Promise<void>;         // runs the teardown, then every tracked disposable (in reverse order)
+  stop(): Promise<void>; // runs the teardown, then every tracked disposable (in reverse order)
 }
 
 // ── context ──────────────────────────────────────────────────────────────────
 export interface PluginContext {
   readonly id: string;
   readonly log: Logger;
-  readonly signal: AbortSignal;  // aborted on stop; pass it to addEventListener
+  readonly signal: AbortSignal; // aborted on stop; pass it to addEventListener
   onDispose(fn: Teardown): void;
 
   readonly bus: Bus;
@@ -135,7 +158,7 @@ export interface PluginContext {
 
 // ── logger ───────────────────────────────────────────────────────────────────
 export interface Logger {
-  debug(...a: unknown[]): void;  // printed only when localStorage "nordlys:debug" = "1"
+  debug(...a: unknown[]): void; // printed only when localStorage "nordlys:debug" = "1"
   info(...a: unknown[]): void;
   warn(...a: unknown[]): void;
   error(...a: unknown[]): void;
@@ -144,39 +167,45 @@ export interface Logger {
 
 // ── platform ─────────────────────────────────────────────────────────────────
 export interface PlatformInfo {
-  os: "mac" | "windows" | "linux";           // PlatformData.os_name, falling back to userAgent
-  formatShortcut(combo: string): string;     // "mod+alt+1" → "⌘⌥1" | "Ctrl+Alt+1"
+  os: "mac" | "windows" | "linux"; // PlatformData.os_name, falling back to userAgent
+  formatShortcut(combo: string): string; // "mod+alt+1" → "⌘⌥1" | "Ctrl+Alt+1"
 }
 
 // ── storage ──────────────────────────────────────────────────────────────────
 export interface StoreSpec<T> {
-  key: string;                                // saved as "nordlys:<pluginId>:<key>"
-  version: number;                            // current schema version
+  key: string; // saved as "nordlys:<pluginId>:<key>"
+  version: number; // current schema version
   defaults(): T;
   migrations?: Record<number, (prev: unknown) => unknown>; // n → n+1, applied in order
-  legacyKeys?: string[];                      // read as version 0 if the main key is missing
+  legacyKeys?: string[]; // read as version 0 if the main key is missing
   validate(data: unknown): data is T;
 }
 export interface Store<T> {
   get(): T;
   set(next: T): void;
   update(fn: (prev: T) => T): void;
-  subscribe(fn: (next: T) => void): () => void;   // tracked by ctx
+  subscribe(fn: (next: T) => void): () => void; // tracked by ctx
 }
-export interface StorageApi { define<T>(spec: StoreSpec<T>): Store<T>; }
+export interface StorageApi {
+  define<T>(spec: StoreSpec<T>): Store<T>;
+}
 
 // ── ui (only what Spaces needs) ──────────────────────────────────────────────
 export interface UiApi {
-  addStyle(css: string): void;                                 // <style data-nl-plugin="<id>">
-  topbarButton(o: { label: string; icon: string; onClick(anchor: HTMLElement): void }): ButtonHandle | null;
+  addStyle(css: string): void; // <style data-nl-plugin="<id>">
+  topbarButton(o: {
+    label: string;
+    icon: string;
+    onClick(anchor: HTMLElement): void;
+  }): ButtonHandle | null;
   popover(anchor: HTMLElement, render: (close: () => void) => HTMLElement): PopoverHandle; // flips and clamps to the viewport
   contextSubmenu(o: {
     label: string;
-    when(uris: string[]): boolean;                             // e.g. only playlist/album/artist
+    when(uris: string[]): boolean; // e.g. only playlist/album/artist
     items(uris: string[]): Array<{ label: string; onClick(): void }>;
   }): void;
-  shortcut(combo: string, fn: () => void): void;               // "mod+alt+1"
-  toast(message: string, o?: { error?: boolean }): void;       // Spicetify.showNotification
+  shortcut(combo: string, fn: () => void): void; // "mod+alt+1"
+  toast(message: string, o?: { error?: boolean }): void; // Spicetify.showNotification
 }
 
 // ── adapters ─────────────────────────────────────────────────────────────────
@@ -187,10 +216,10 @@ export interface PlayerState {
   isPaused: boolean;
 }
 export interface PlayerAdapter {
-  getState(): PlayerState;                    // reads data.item ?? data.track, and so on
+  getState(): PlayerState; // reads data.item ?? data.track, and so on
   play(target: { contextUri: string; trackUri?: string; positionMs?: number }): Promise<boolean>;
   pause(): Promise<void>;
-  getVolume(): number;                        // 0..1
+  getVolume(): number; // 0..1
   setVolume(v: number): Promise<void>;
   fadeVolume(to: number, ms: number, signal?: AbortSignal): Promise<void>;
   onSongChange(fn: (s: PlayerState) => void): () => void;
@@ -199,26 +228,34 @@ export interface PlayerAdapter {
 export interface NavigationAdapter {
   currentPath(): string;
   go(path: string): void;
-  pathForUri(uri: string): string | null;     // spotify:playlist:x → /playlist/x
+  pathForUri(uri: string): string | null; // spotify:playlist:x → /playlist/x
   onChange(fn: (path: string) => void): () => void;
 }
-export type FeatureReport = Readonly<Record<
-  "playerApiPlay" | "playUri" | "topbar" | "playbarButton" | "contextSubmenu" | "mousetrap" | "panel",
-  boolean
->>;
+export type FeatureReport = Readonly<
+  Record<
+    | "playerApiPlay"
+    | "playUri"
+    | "topbar"
+    | "playbarButton"
+    | "contextSubmenu"
+    | "mousetrap"
+    | "panel",
+    boolean
+  >
+>;
 ```
 
 What each adapter tries, in order (the fallback is logged once):
 
-| Need | First choice | Fallback | Last resort |
-|---|---|---|---|
-| Current track | `Player.data.item` | `Player.data.track` | `null` |
-| Play at a track | `Platform.PlayerAPI.play({uri}, {}, {skipTo:{uri}})` | `Player.playUri(ctx, {}, {skipTo})` | `Player.playUri(ctx)` then seek |
-| Seek after load | wait for a `songchange` with the matching track URI (2 s timeout), then `Player.seek` | fixed 300 ms delay | skip the seek |
-| Top bar entry | `Topbar.Button` | `Playbar.Button` | shortcuts only, with a toast explaining why |
-| Context menu | `ContextMenu.SubMenu` | flat `ContextMenu.Item` per space ("Add to Focus") | none |
-| Shortcuts | `Mousetrap.bind` | `keydown` on `window` | — |
-| Navigation | `Platform.History` | — | — |
+| Need            | First choice                                                                          | Fallback                                           | Last resort                                 |
+| --------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------- |
+| Current track   | `Player.data.item`                                                                    | `Player.data.track`                                | `null`                                      |
+| Play at a track | `Platform.PlayerAPI.play({uri}, {}, {skipTo:{uri}})`                                  | `Player.playUri(ctx, {}, {skipTo})`                | `Player.playUri(ctx)` then seek             |
+| Seek after load | wait for a `songchange` with the matching track URI (2 s timeout), then `Player.seek` | fixed 300 ms delay                                 | skip the seek                               |
+| Top bar entry   | `Topbar.Button`                                                                       | `Playbar.Button`                                   | shortcuts only, with a toast explaining why |
+| Context menu    | `ContextMenu.SubMenu`                                                                 | flat `ContextMenu.Item` per space ("Add to Focus") | none                                        |
+| Shortcuts       | `Mousetrap.bind`                                                                      | `keydown` on `window`                              | —                                           |
+| Navigation      | `Platform.History`                                                                    | —                                                  | —                                           |
 
 ## 4. Standalone vs shared core
 
@@ -228,24 +265,24 @@ What each adapter tries, in order (the fallback is logged once):
 
 ```ts
 interface NordlysHost {
-  protocol: 1;                       // bumped only for breaking changes to this object
-  coreVersions: string[];            // every core version that joined (for diagnostics)
-  bus: HostBus;                      // the one shared bus
+  protocol: 1; // bumped only for breaking changes to this object
+  coreVersions: string[]; // every core version that joined (for diagnostics)
+  bus: HostBus; // the one shared bus
   plugins: Map<string, { version: string; stop(): Promise<void> }>;
-  logs: LogEntry[];                  // shared ring buffer, last 200 entries
+  logs: LogEntry[]; // shared ring buffer, last 200 entries
 }
 // window.__nordlys ??= createHost();  (the first copy wins)
 ```
 
 **What happens when two plugins each bundle the core:**
 
-| Case | Result |
-|---|---|
-| Spaces and Timer, same protocol | The second copy finds `window.__nordlys` and joins it. Both plugins use one bus, so `spaces.switchTo` from Timer works. |
-| Same protocol, different core versions | Works. The shared object is frozen per protocol, so changes inside a protocol are only additions. |
-| Different protocol | The newer copy creates `window.__nordlys_p2` and logs a warning that the two can't talk until both are updated. Each plugin still works on its own. |
-| The same plugin loaded twice (Marketplace and manual copy) | The second `start()` sees the id in `plugins`, logs "already running v…", and does nothing. |
-| Load order | Doesn't matter. Commands that aren't registered yet fail with `NoHandlerError`, and callers can wait for the `nordlys:plugin-ready` event. |
+| Case                                                       | Result                                                                                                                                              |
+| ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Spaces and Timer, same protocol                            | The second copy finds `window.__nordlys` and joins it. Both plugins use one bus, so `spaces.switchTo` from Timer works.                             |
+| Same protocol, different core versions                     | Works. The shared object is frozen per protocol, so changes inside a protocol are only additions.                                                   |
+| Different protocol                                         | The newer copy creates `window.__nordlys_p2` and logs a warning that the two can't talk until both are updated. Each plugin still works on its own. |
+| The same plugin loaded twice (Marketplace and manual copy) | The second `start()` sees the id in `plugins`, logs "already running v…", and does nothing.                                                         |
+| Load order                                                 | Doesn't matter. Commands that aren't registered yet fail with `NoHandlerError`, and callers can wait for the `nordlys:plugin-ready` event.          |
 
 The only code that must stay stable for a long time is the host object and the bus protocol. Everything else can change in any release.
 
@@ -265,8 +302,10 @@ export interface Bus {
   emit<K extends keyof NordlysEvents>(type: K, payload: NordlysEvents[K]): void;
   on<K extends keyof NordlysEvents>(type: K, fn: (p: NordlysEvents[K]) => void): () => void;
   handle<K extends keyof NordlysCommands>(name: K, fn: NordlysCommands[K]): () => void;
-  call<K extends keyof NordlysCommands>(name: K, ...args: Parameters<NordlysCommands[K]>):
-    Promise<Awaited<ReturnType<NordlysCommands[K]>>>;      // throws NoHandlerError if none
+  call<K extends keyof NordlysCommands>(
+    name: K,
+    ...args: Parameters<NordlysCommands[K]>
+  ): Promise<Awaited<ReturnType<NordlysCommands[K]>>>; // throws NoHandlerError if none
   has(name: keyof NordlysCommands): boolean;
 }
 ```
@@ -282,15 +321,22 @@ Rules:
 Spaces' public contract lives in `plugins/spaces/src/api.ts`, which contains types only:
 
 ```ts
-export interface SpaceInfo { id: string; name: string; icon: string; color: string; accent: string; index: number }
+export interface SpaceInfo {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  accent: string;
+  index: number;
+}
 export type SwitchResult =
   | { ok: true; resumed: boolean }
-  | { ok: false; reason: "unknown-space" | "already-current" | "superseded" | "playback-failed" };
+  | { ok: false; reason: "unknown-space" | "already-current" | "superseded" | "failed" };
 
 declare module "@nordlys/core" {
   interface NordlysEvents {
     "spaces:changed": { from: SpaceInfo | null; to: SpaceInfo };
-    "spaces:updated": { spaces: SpaceInfo[] };  // after create, edit, delete or reorder
+    "spaces:updated": { spaces: SpaceInfo[] }; // after create, edit, delete or reorder
   }
   interface NordlysCommands {
     "spaces.list": () => SpaceInfo[];
@@ -308,23 +354,23 @@ Plugins never require a theme. The plugin's own CSS uses Spicetify's standard co
 
 **On `<html>`** (set by Spaces, removed on teardown):
 
-| Attribute | Example | Meaning |
-|---|---|---|
-| `data-nl-space` | `"focus"` | id of the current space |
-| `data-nl-space-color` | `"fjord"` | color preset key. More useful to themes than the id, which users create. |
-| `data-nl-switching` | present while a switch runs | lets themes animate the change |
-| `data-nl-tint` | present when tinting is on | lets themes switch off or replace the built-in tint |
-| `data-nl-os` | `"mac"` / `"windows"` / `"linux"` | set by the core |
+| Attribute             | Example                           | Meaning                                                                  |
+| --------------------- | --------------------------------- | ------------------------------------------------------------------------ |
+| `data-nl-space`       | `"focus"`                         | id of the current space                                                  |
+| `data-nl-space-color` | `"fjord"`                         | color preset key. More useful to themes than the id, which users create. |
+| `data-nl-switching`   | present while a switch runs       | lets themes animate the change                                           |
+| `data-nl-tint`        | present when tinting is on        | lets themes switch off or replace the built-in tint                      |
+| `data-nl-os`          | `"mac"` / `"windows"` / `"linux"` | set by the core                                                          |
 
 **CSS custom properties on `:root`:**
 
-| Property | Example |
-|---|---|
-| `--nl-space-accent` | `#8ed6e3` |
-| `--nl-space-accent-rgb` | `142, 214, 227` (for `rgba(var(--nl-space-accent-rgb), .2)`) |
-| `--nl-space-on-accent` | `#111` (readable text on the accent) |
-| `--nl-space-g1` / `-g2` / `-g3` | the three glow colors from the preset |
-| `--nl-space-base` | the darkest preset color (`g0` in the prototype) |
+| Property                        | Example                                                      |
+| ------------------------------- | ------------------------------------------------------------ |
+| `--nl-space-accent`             | `#8ed6e3`                                                    |
+| `--nl-space-accent-rgb`         | `142, 214, 227` (for `rgba(var(--nl-space-accent-rgb), .2)`) |
+| `--nl-space-on-accent`          | `#111` (readable text on the accent)                         |
+| `--nl-space-g1` / `-g2` / `-g3` | the three glow colors from the preset                        |
+| `--nl-space-base`               | the darkest preset color (`g0` in the prototype)             |
 
 **Stable class names** (BEM-ish, prefixed): `.nl-spaces-panel`, `.nl-spaces-switcher`, `.nl-space-btn`, `.nl-space-btn--active`, `.nl-spaces-item`, `.nl-spaces-editor`, `.nl-popover`, `.nl-scroll`. Anything not listed in `docs/styling-contract.md` is internal and may change.
 
@@ -355,11 +401,19 @@ The Spaces v1 schema:
 ```ts
 interface SpacesStateV1 {
   currentId: string;
-  playedIn: string | null;          // the space whose music is loaded in the player
+  playedIn: string | null; // the space whose music is loaded in the player
   settings: { musicPerSpace: boolean; crossfadeMs: number; tint: boolean };
   spaces: Array<{
-    id: string; name: string; icon: IconId; color: ColorPresetId;
-    items: Array<{ uri: string; kind: "playlist" | "album" | "artist"; name: string; image: string | null }>;
+    id: string;
+    name: string;
+    icon: IconId;
+    color: ColorPresetId;
+    items: Array<{
+      uri: string;
+      kind: "playlist" | "album" | "artist";
+      name: string;
+      image: string | null;
+    }>;
     lastPath: string | null;
     snapshot: { contextUri: string; trackUri: string; positionMs: number; savedAt: number } | null;
   }>;
@@ -396,17 +450,17 @@ switchTo(id):
 
 ## 9. Tooling
 
-| Tool | Why |
-|---|---|
-| **pnpm** workspaces | Fast, strict `node_modules` that also enforce package boundaries, and good monorepo support. |
-| **esbuild** with our own `tools/build.ts` | One IIFE per plugin with CSS imported as text, `define` for version and debug flags, and watch mode, all in about 80 lines we fully control. |
-| `spicetify-creator`: **not used** | It brings its own templates and config, assumes one extension per project, doesn't support our standalone-plus-handshake layout, and is only lightly maintained. Nothing it does is hard to do with esbuild. |
-| **TypeScript strict** | Also `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsc -b` with project references, used for type checking only. |
-| **Vitest + happy-dom** | Fast, uses esbuild under the hood like our build, and has fake timers for fade and crossfade tests. |
-| **Playwright** (Chromium) | Spotify's desktop app runs on Chromium (CEF), so this is the closest browser we can test in. It runs the built `.js` against the mock harness at 100%, 125% and 150% `deviceScaleFactor`. |
-| **Biome** | One fast tool for lint and format, with no ESLint plus Prettier setup to maintain. |
-| **Changesets** | Per-package versions and CHANGELOGs. It also handles private (not on npm) packages and tags each release. |
-| Release output | **Readable, not minified** bundles with a version banner. People audit extensions before installing them, and the bundles are small. |
+| Tool                                      | Why                                                                                                                                                                                                          |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **pnpm** workspaces                       | Fast, strict `node_modules` that also enforce package boundaries, and good monorepo support.                                                                                                                 |
+| **esbuild** with our own `tools/build.ts` | One IIFE per plugin with CSS imported as text, `define` for version and debug flags, and watch mode, all in about 80 lines we fully control.                                                                 |
+| `spicetify-creator`: **not used**         | It brings its own templates and config, assumes one extension per project, doesn't support our standalone-plus-handshake layout, and is only lightly maintained. Nothing it does is hard to do with esbuild. |
+| **TypeScript strict**                     | Also `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` and `verbatimModuleSyntax`. `tsc -b` with project references, used for type checking only.                                                     |
+| **Vitest + happy-dom**                    | Fast, uses esbuild under the hood like our build, and has fake timers for fade and crossfade tests.                                                                                                          |
+| **Playwright** (Chromium)                 | Spotify's desktop app runs on Chromium (CEF), so this is the closest browser we can test in. It runs the built `.js` against the mock harness at 100%, 125% and 150% `deviceScaleFactor`.                    |
+| **Biome**                                 | One fast tool for lint and format, with no ESLint plus Prettier setup to maintain.                                                                                                                           |
+| **Changesets**                            | Per-package versions and CHANGELOGs. It also handles private (not on npm) packages and tags each release.                                                                                                    |
+| Release output                            | **Readable, not minified** bundles with a version banner. People audit extensions before installing them, and the bundles are small.                                                                         |
 
 ## 10. Pushback: what I'd cut or change for v1
 
@@ -432,7 +486,7 @@ I couldn't open the Spicetify docs from this environment (`spicetify.app` is blo
 ## 12. Distribution
 
 - **Marketplace (current rules):** the repo must be **public**, have the topic `spicetify-extensions` (and later `spicetify-themes`), and have a root `manifest.json`. The manifest may be an **array** with one object per extension or theme. Extensions need `name`, `description`, `preview`, `main` and `readme`, plus optional `branch`, `authors` and `tags`. Themes need `usercss` and `schemes` instead of `main`.
-- **Built files must be in git** for the Marketplace to fetch them. I propose a **`dist` branch** that the release workflow updates with the built `.js`, its README and its preview, and each manifest entry sets `"branch": "dist"`. This keeps build output out of `main`. *To verify:* I believe the Marketplace reads `readme` and `preview` from that same branch, which is why they get copied there. I'll confirm this against the Marketplace source before relying on it.
+- **Built files must be in git** for the Marketplace to fetch them. I propose a **`dist` branch** that the release workflow updates with the built `.js`, its README and its preview, and each manifest entry sets `"branch": "dist"`. This keeps build output out of `main`. _To verify:_ I believe the Marketplace reads `readme` and `preview` from that same branch, which is why they get copied there. I'll confirm this against the Marketplace source before relying on it.
 - **Manual install:** download `nordlys-spaces.js` from the GitHub Release, copy it into `Extensions/`, then run `spicetify config extensions nordlys-spaces.js` and `spicetify apply`.
 - **CI** (`ci.yml`, every push and PR): Biome check, typecheck, Vitest, build and boundary check on **Ubuntu, macOS and Windows**, so the build and dev tooling are tested on both target OSes. Playwright smoke runs on Ubuntu.
 - **Release** (`release.yml`): the Changesets action opens a "Version packages" PR. When it's merged, the workflow builds, tags `spaces@x.y.z`, creates a GitHub Release with the `.js` attached, and updates the `dist` branch.

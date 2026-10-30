@@ -1,0 +1,16 @@
+{
+  "name": "@nordlys/spicetify-mock",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A fake Spicetify global for unit tests (Vitest) and browser smoke tests (Playwright).",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "nordlys": {
+    "testAsset": {
+      "entry": "src/browser.ts",
+      "outfile": "mock.js"
+    }
+  }
+}

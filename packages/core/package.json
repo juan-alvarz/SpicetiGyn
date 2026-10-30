@@ -1,0 +1,13 @@
+{
+  "name": "@nordlys/core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The small core every Nordlys plugin bundles: lifecycle, bus, storage, UI helpers and Spicetify adapters.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@nordlys/spicetify-mock": "workspace:*"
+  }
+}
