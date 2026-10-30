@@ -220,7 +220,7 @@ spicetify apply
 
 Then you can delete `nordlys-spaces.js` from the `Extensions` folder. Your spaces stay saved inside Spotify, in case you reinstall.
 
-**A theme:** switch to another theme with `spicetify config current_theme <OtherTheme>`, run `spicetify apply`, and then delete the theme's folder from `Themes`.
+**A theme:** go back to stock Spotify with `spicetify config current_theme -` (the `-` clears it), run `spicetify apply`, and then delete the theme's folder from `Themes`.
 
 **The tools (quick way only):** delete the `SpicetiGyn` folder. Everything `npm install` downloaded lives inside it.
 

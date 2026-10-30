@@ -58,7 +58,7 @@ Other commands:
 
 Set `NORDLYS_SPICETIFY_USERDATA` to use a different folder (handy for a test profile).
 
-To turn a theme off, enable another one, or follow Spicetify's docs for going back to stock Spotify.
+To turn a theme off and go back to stock Spotify colors, run `npm run dev -- disable codex` (any theme name works; it clears `current_theme`).
 
 ## Debug logging
 

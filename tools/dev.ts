@@ -6,7 +6,7 @@
  *   npm run dev -- install [name…] [--link] build, then copy (or link) into Extensions/ and Themes/
  *   npm run dev -- watch [name…]            rebuild on change and copy into userdata each time
  *   npm run dev -- enable <name> [scheme]   extension: spicetify config extensions <file>; theme: current_theme
- *   npm run dev -- disable <name>           extension: spicetify config extensions <file>-
+ *   npm run dev -- disable <name>           extension: config extensions <file>-; theme: back to stock
  *
  * Names are package folder names: spaces, codex, … Set NORDLYS_SPICETIFY_USERDATA to override
  * the userdata folder. Add --no-apply to skip `spicetify apply` after enable/disable.
@@ -215,7 +215,8 @@ async function main() {
         ]);
         spicetify(["config", "inject_css", "1", "replace_colors", "1"]);
       } else {
-        throw new Error("To turn a theme off, enable another one, or see docs/dev-loop.md.");
+        // An empty current_theme ("-" clears it) means stock Spotify.
+        spicetify(["config", "current_theme", "-"]);
       }
       applyUnless(flags);
       break;

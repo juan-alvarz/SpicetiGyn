@@ -184,6 +184,9 @@ describe("Spaces plugin", () => {
     running = null;
 
     expect(controls.topbarButtons()).toHaveLength(0);
+    // Spicetify re-attaches top bar buttons after a page change; ours must stay gone.
+    controls.navigate("/album/northbound");
+    expect(controls.topbarButtons()).toHaveLength(0);
     expect(controls.contextMenu(["spotify:playlist:x"])).toHaveLength(0);
     expect(controls.bindings()).toEqual([]);
     expect(controls.listenerCount()).toBe(0);

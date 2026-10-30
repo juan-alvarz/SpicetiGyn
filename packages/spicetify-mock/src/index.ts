@@ -244,6 +244,8 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
       record("History.push", [pathname]);
       location.pathname = pathname;
       for (const fn of [...historyListeners]) fn({ pathname });
+      // Like Spicetify, re-attach every top bar button it ever created after a page change.
+      doc.getElementById("nl-mock-topbar")?.append(...topbarStash);
     },
     listen(fn: (loc: { pathname: string }) => void) {
       historyListeners.add(fn);
@@ -304,6 +306,42 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     }
     return el;
   };
+  // Like Spicetify's Topbar.Button: a wrapper <div> with a <button>, no register/deregister,
+  // and kept in a stash that is re-attached after every page change.
+  const topbarStash = new Set<HTMLElement>();
+  class MockTopbarButton {
+    element: HTMLDivElement;
+    button: HTMLButtonElement;
+    constructor(label: string, icon: string, onClick: (self: unknown) => void, disabled = false) {
+      record("Topbar.Button", [label]);
+      this.element = doc.createElement("div");
+      this.element.className = "spicetify-topbar-button";
+      this.button = doc.createElement("button");
+      this.button.type = "button";
+      this.button.disabled = disabled;
+      this.button.addEventListener("click", () => onClick(this));
+      this.element.appendChild(this.button);
+      this.label = label;
+      this.icon = icon;
+      topbarStash.add(this.element);
+      container("nl-mock-topbar").appendChild(this.element);
+    }
+    set label(value: string) {
+      this.button.setAttribute("aria-label", value);
+      this.button.title = value;
+    }
+    get label() {
+      return this.button.getAttribute("aria-label") ?? "";
+    }
+    set icon(value: string) {
+      this.button.innerHTML = value;
+    }
+    get icon() {
+      return this.button.innerHTML;
+    }
+  }
+
+  // Like Spicetify's Playbar.Button, which does have register/deregister.
   const makeButtonClass = (containerId: string, api: string) =>
     class MockButton {
       element: HTMLButtonElement;
@@ -404,7 +442,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
       notifications.push({ text, isError });
     },
   };
-  if (o.topbar) Spicetify.Topbar = { Button: makeButtonClass("nl-mock-topbar", "Topbar.Button") };
+  if (o.topbar) Spicetify.Topbar = { Button: MockTopbarButton };
   if (o.playbar)
     Spicetify.Playbar = { Button: makeButtonClass("nl-mock-playbar", "Playbar.Button") };
   if (o.contextMenu) Spicetify.ContextMenu = o.subMenu ? { Item, SubMenu } : { Item };
@@ -469,9 +507,11 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     contextMenu: (uris) =>
       [...menu].filter((e) => e.shouldAdd?.(uris) ?? true).map((e) => view(e, uris)),
     navigate: (path) => History.push(path),
-    topbarButtons: () => [
-      ...doc.querySelectorAll<HTMLElement>("#nl-mock-topbar button, #nl-mock-playbar button"),
-    ],
+    // Visible buttons only: a removed Topbar.Button may be re-attached, hidden.
+    topbarButtons: () =>
+      [
+        ...doc.querySelectorAll<HTMLElement>("#nl-mock-topbar button, #nl-mock-playbar button"),
+      ].filter((b) => b.closest<HTMLElement>(".spicetify-topbar-button")?.style.display !== "none"),
     listenerCount: (type) =>
       type
         ? (listeners.get(type)?.size ?? 0)

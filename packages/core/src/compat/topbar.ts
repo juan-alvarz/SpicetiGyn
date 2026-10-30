@@ -58,8 +58,16 @@ export function createButton(
       b.icon = svg;
     },
     remove() {
-      if (typeof b.deregister === "function") b.deregister();
-      else b.element?.remove();
+      if (typeof b.deregister === "function") {
+        b.deregister();
+        return;
+      }
+      // Topbar.Button has no deregister(), and Spicetify puts every button it created back
+      // into the top bar after each page change, so hide it for good before removing it.
+      if (b.element) {
+        b.element.style.display = "none";
+        b.element.remove();
+      }
     },
   };
 }
