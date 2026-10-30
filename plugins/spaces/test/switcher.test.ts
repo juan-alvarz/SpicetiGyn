@@ -1,8 +1,9 @@
 import type { PlayerAdapter, PlayerState, Store } from "@nordlys/core";
 import { describe, expect, it, vi } from "vitest";
 import type { SpacesState } from "../src/model/schema";
-import { defaultState, setSnapshot, updateSettings } from "../src/model/state";
+import { setSnapshot, updateSettings } from "../src/model/state";
 import { createSwitcher } from "../src/switcher";
+import { twoSpaces } from "./fixtures";
 
 function memoryStore(initial: SpacesState): Store<SpacesState> {
   let value = initial;
@@ -111,7 +112,7 @@ function setup(state: SpacesState, player = fakePlayer(playing)) {
 
 describe("switching spaces", () => {
   it("saves this space, fades out, resumes the other, fades in, restores the volume", async () => {
-    const base = setSnapshot({ ...defaultState(), playedIn: "focus" }, "chill", chillSnapshot);
+    const base = setSnapshot({ ...twoSpaces(), playedIn: "focus" }, "chill", chillSnapshot);
     const t = setup(base);
     const result = await t.switcher.switchTo("chill");
 
@@ -135,13 +136,13 @@ describe("switching spaces", () => {
   });
 
   it("does not save a snapshot when the music was not played in this space", async () => {
-    const t = setup({ ...defaultState(), playedIn: "chill" });
+    const t = setup({ ...twoSpaces(), playedIn: "chill" });
     await t.switcher.switchTo("chill");
     expect(t.store.get().spaces[0]?.snapshot).toBeNull();
   });
 
   it("pauses when the target space has never played anything", async () => {
-    const t = setup({ ...defaultState(), playedIn: "focus" });
+    const t = setup({ ...twoSpaces(), playedIn: "focus" });
     const result = await t.switcher.switchTo("chill");
     expect(result).toEqual({ ok: true, resumed: false });
     expect(t.log).toEqual(["fade 0 1500", "apply chill", "pause", "volume 0.7"]);
@@ -149,7 +150,7 @@ describe("switching spaces", () => {
   });
 
   it("loads the target silently and leaves it paused when nothing was playing", async () => {
-    const base = setSnapshot(defaultState(), "chill", chillSnapshot);
+    const base = setSnapshot(twoSpaces(), "chill", chillSnapshot);
     const t = setup(base, fakePlayer({ ...playing, isPaused: true }));
     await t.switcher.switchTo("chill");
     expect(t.log).toEqual([
@@ -162,7 +163,7 @@ describe("switching spaces", () => {
   });
 
   it("restores the volume even when playback throws", async () => {
-    const base = setSnapshot(defaultState(), "chill", chillSnapshot);
+    const base = setSnapshot(twoSpaces(), "chill", chillSnapshot);
     const player = fakePlayer(playing);
     player.throwOnPlay();
     vi.spyOn(console, "error").mockImplementation(() => {});
@@ -175,14 +176,14 @@ describe("switching spaces", () => {
   });
 
   it("switches without touching the music when 'music keeps playing' is on", async () => {
-    const t = setup(updateSettings(defaultState(), { musicPerSpace: false }));
+    const t = setup(updateSettings(twoSpaces(), { musicPerSpace: false }));
     expect(await t.switcher.switchTo("chill")).toEqual({ ok: true, resumed: false });
     expect(t.log).toEqual(["apply chill"]);
   });
 
   it("skips the fade when the crossfade is 0", async () => {
     const base = setSnapshot(
-      updateSettings(defaultState(), { crossfadeMs: 0 }),
+      updateSettings(twoSpaces(), { crossfadeMs: 0 }),
       "chill",
       chillSnapshot,
     );
@@ -192,13 +193,13 @@ describe("switching spaces", () => {
   });
 
   it("rejects unknown and current spaces", async () => {
-    const t = setup(defaultState());
+    const t = setup(twoSpaces());
     expect(await t.switcher.switchTo("nope")).toEqual({ ok: false, reason: "unknown-space" });
     expect(await t.switcher.switchTo("focus")).toEqual({ ok: false, reason: "already-current" });
   });
 
   it("lets the newest request win while a switch is running", async () => {
-    let s = defaultState();
+    let s = twoSpaces();
     s = {
       ...s,
       spaces: [

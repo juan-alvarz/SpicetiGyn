@@ -3,11 +3,35 @@ import { expect, type Page, test } from "@playwright/test";
 
 const DIST = path.resolve(import.meta.dirname, "../../dist");
 
+const space = (id: string, name: string, color: string, icon: string) => ({
+  id,
+  name,
+  color,
+  icon,
+  items: [],
+  lastPath: null,
+  snapshot: null,
+});
+
+/** Most tests start with two spaces; a fresh install has one ("Spotify"). */
+const TWO_SPACES = {
+  "nordlys:spaces:state": JSON.stringify({
+    v: 1,
+    data: {
+      currentId: "focus",
+      playedIn: null,
+      settings: { musicPerSpace: true, crossfadeMs: 3000, tint: false },
+      spaces: [space("focus", "Focus", "fjord", "target"), space("chill", "Chill", "ember", "cup")],
+    },
+  }),
+};
+
 async function load(
   page: Page,
   options: Record<string, unknown> = {},
   bundles = ["extensions/nordlys-spaces.js"],
 ) {
+  options = { seed: TWO_SPACES, ...options };
   await page.addInitScript((o) => {
     (window as unknown as { __NL_MOCK_OPTIONS: unknown }).__NL_MOCK_OPTIONS = o;
   }, options);
@@ -192,4 +216,11 @@ test("on Spotify 1.3.x, where top bar buttons can't attach, the sidebar switcher
   await expect(html(page)).toHaveAttribute("data-nl-space", "gym");
   await expect(dock.locator(".nl-dock-btn[data-space]")).toHaveCount(3);
   await page.screenshot({ path: test.info().outputPath("dock.png") });
+});
+
+test("a fresh install has one space named Spotify", async ({ page }) => {
+  await load(page, { seed: {} });
+  const dock = page.getByRole("toolbar", { name: "Spaces" }).first();
+  await expect(dock.locator(".nl-dock-btn[data-space]")).toHaveText(["Spotify"]);
+  await expect(page.locator("html")).toHaveAttribute("data-nl-space", "spotify");
 });

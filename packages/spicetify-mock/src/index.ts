@@ -37,6 +37,8 @@ export interface MockOptions {
   latencyMs?: number;
   catalog?: Record<string, CatalogEntry>;
   storage?: Map<string, string>;
+  /** Initial LocalStorage contents (plain object, so it can cross into the browser harness). */
+  seed?: Record<string, string>;
   /** Where Topbar/Playbar buttons are rendered. Created in document.body when missing. */
   document?: Document;
 }
@@ -133,7 +135,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
   } as Required<Omit<MockOptions, "catalog" | "storage" | "document">> & MockOptions;
   const doc = options.document ?? globalThis.document;
   const catalog = options.catalog ?? DEMO_CATALOG;
-  const storage = options.storage ?? new Map<string, string>();
+  const storage = options.storage ?? new Map<string, string>(Object.entries(options.seed ?? {}));
   const calls: MockControls["calls"] = [];
   const notifications: MockControls["notifications"] = [];
   const listeners = new Map<string, Set<Fn>>();
@@ -288,7 +290,8 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
   };
   const GraphQL = {
     Definitions,
-    async Request(def: unknown, vars: { uri: string }) {
+    async Request(def: unknown, vars: { uri: string; locale?: string }) {
+      record("GraphQL.Request", [vars]);
       const entry = catalog[vars.uri];
       if (!entry) throw new Error("not found");
       const sources = entry.image ? [{ url: entry.image }] : [];
@@ -435,10 +438,23 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     },
   };
 
+  // The Cosmos endpoint Spicetify's own Bookmark extension uses for playlist names.
+  const CosmosAsync = {
+    async get(url: string) {
+      record("CosmosAsync.get", [url]);
+      const match = /^sp:\/\/core-playlist\/v1\/playlist\/(.+)\/metadata$/.exec(url);
+      const entry = match ? catalog[match[1] as string] : undefined;
+      if (!entry) throw new Error("not found");
+      return { metadata: { name: entry.name, picture: entry.image ?? "" } };
+    },
+  };
+
   const Spicetify: Record<string, unknown> = {
     Player,
     Platform,
     GraphQL,
+    CosmosAsync,
+    Locale: { getLocale: () => "en" },
     LocalStorage: {
       get: (k: string) => storage.get(k) ?? null,
       set: (k: string, v: string) => void storage.set(k, v),

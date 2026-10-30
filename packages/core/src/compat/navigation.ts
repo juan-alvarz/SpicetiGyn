@@ -5,6 +5,8 @@ export type ItemKind = "playlist" | "album" | "artist";
 
 export interface NavigationAdapter {
   currentPath(): string;
+  /** The title of the open page as Spotify shows it (e.g. a playlist's name), if any. */
+  pageTitle(): string | null;
   go(path: string): void;
   onChange(fn: (path: string) => void): () => void;
 }
@@ -37,6 +39,15 @@ export function createNavigationAdapter(
   const history = s.Platform?.History;
   return {
     currentPath: () => history?.location?.pathname ?? "/",
+    pageTitle() {
+      // The header title (data-testid is stable across 1.2.x and 1.3.x), then the main
+      // landmark's label ("Spotify – Liked Songs").
+      const title = document.querySelector('[data-testid="entityTitle"]')?.textContent?.trim();
+      if (title) return title;
+      const label = document.querySelector("main[aria-label]")?.getAttribute("aria-label") ?? "";
+      const name = label.replace(/^Spotify\s*[–-]\s*/, "").trim();
+      return name && name !== label ? name : null;
+    },
     go(path) {
       if (typeof history?.push !== "function") {
         log.warnOnce("nav.push", "Platform.History.push is missing; can't open pages.");

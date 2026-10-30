@@ -128,6 +128,8 @@ export interface SpicetifyLike {
     remove?(key: string): void;
   };
   GraphQL?: GraphQLLike;
+  CosmosAsync?: { get?(url: string, body?: unknown): Promise<unknown> };
+  Locale?: { getLocale?(): string };
   Panel?: { registerPanel?: unknown };
   showNotification?(text: string, isError?: boolean, msTimeout?: number): void;
 }

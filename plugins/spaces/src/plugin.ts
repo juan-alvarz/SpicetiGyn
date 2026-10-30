@@ -96,7 +96,8 @@ export default definePlugin({
       if (info) store.update((s) => updateItemInfo(s, uri, { name: info.name, image: info.image }));
     };
 
-    const addToSpace = (spaceId: string, uri: string) => {
+    /** `name` is a first guess (e.g. the page title); the metadata lookup may improve it. */
+    const addToSpace = (spaceId: string, uri: string, name = "") => {
       const parsed = parseItemUri(uri);
       const space = store.get().spaces.find((s) => s.id === spaceId);
       if (!parsed || !space) return;
@@ -105,7 +106,7 @@ export default definePlugin({
         return;
       }
       store.update((s) =>
-        addItem(s, spaceId, { uri, kind: parsed.kind, name: "", image: null, addedAt: Date.now() }),
+        addItem(s, spaceId, { uri, kind: parsed.kind, name, image: null, addedAt: Date.now() }),
       );
       void fillInfo(uri).then(() => {
         const item = store
@@ -150,7 +151,7 @@ export default definePlugin({
         currentPage,
         addCurrentPage() {
           const page = currentPage();
-          if (page) addToSpace(store.get().currentId, page.uri);
+          if (page) addToSpace(store.get().currentId, page.uri, ctx.nav.pageTitle() ?? "");
         },
         create(draft) {
           const { state, id } = createSpace(store.get(), draft);
@@ -179,6 +180,13 @@ export default definePlugin({
           updateButton();
           ctx.ui.toast(`Deleted ${removed.name}. Its items moved to ${heir.name}.`);
         },
+        nowPlaying() {
+          const s = store.get();
+          const player = ctx.player.getState();
+          if (s.playedIn !== s.currentId || !player.trackUri) return null;
+          return { track: player.trackName, paused: player.isPaused };
+        },
+        forget: (id) => store.update((s) => setSnapshot(s, id, null)),
         moveItem: (uri, toId) => store.update((s) => moveItem(s, s.currentId, toId, uri)),
         removeItem: (uri) => store.update((s) => removeItem(s, s.currentId, uri)),
         updateSettings(patch) {
@@ -252,7 +260,15 @@ export default definePlugin({
       if (!state.isPaused && state.trackUri) s = setPlayedIn(s, s.currentId);
       const snapshot = snapshotOf(state, Date.now());
       if (s.playedIn === s.currentId && snapshot) s = setSnapshot(s, s.currentId, snapshot);
+      ctx.log.debug(
+        `playback: ${state.trackName ?? state.trackUri} (${state.isPaused ? "paused" : "playing"}) → ${
+          s.playedIn === s.currentId
+            ? `saved to ${s.currentId}`
+            : `not saved (belongs to ${s.playedIn})`
+        }`,
+      );
       if (s !== store.get()) store.set(s);
+      else panel.refresh();
     };
     ctx.player.onSongChange(onPlayback);
     ctx.player.onPlayPause(onPlayback);

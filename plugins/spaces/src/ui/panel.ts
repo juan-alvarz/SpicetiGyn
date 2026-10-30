@@ -31,6 +31,10 @@ export interface PanelActions {
   moveItem(uri: string, toId: string): void;
   removeItem(uri: string): void;
   updateSettings(patch: Partial<Settings>): void;
+  /** What the current space is playing, if the loaded music belongs to it. */
+  nowPlaying(): { track: string | null; paused: boolean } | null;
+  /** Drops a space's saved song, so it starts silent next time. */
+  forget(id: string): void;
 }
 
 type View =
@@ -206,6 +210,7 @@ export function createPanel(deps: {
           icon(UI_ICONS.pencil),
         ),
       ),
+      nowLine(state, space),
       h(
         "button",
         {
@@ -227,6 +232,21 @@ export function createPanel(deps: {
             { class: "nl-spaces-empty" },
             "Nothing here yet. Open a playlist, album or artist and add it, or right-click one and choose “Add to space”.",
           ),
+    );
+  };
+
+  /** One line on the current space's own music, so it's clear each space keeps its song. */
+  const nowLine = (state: SpacesState, space: Space) => {
+    const now = state.settings.musicPerSpace ? actions.nowPlaying() : null;
+    const text = now
+      ? `${now.paused ? "Paused" : "Playing"} in ${space.name}: ${now.track ?? "a song"}`
+      : state.settings.musicPerSpace
+        ? `Nothing played in ${space.name} yet. Whatever you play now stays with this space.`
+        : "Music keeps playing when you switch (see Settings).";
+    return h(
+      "p",
+      { class: ["nl-spaces-now", now && !now.paused && "nl-spaces-now--playing"] },
+      text,
     );
   };
 
@@ -279,6 +299,21 @@ export function createPanel(deps: {
                     h("span", { class: "nl-spaces-item__kind" }, statusOf(state, space)),
                   ),
                 ),
+                space.snapshot
+                  ? h(
+                      "button",
+                      {
+                        class: "nl-icon-btn",
+                        attrs: {
+                          type: "button",
+                          title: `Forget the song saved in ${space.name}`,
+                          "aria-label": `Forget the song saved in ${space.name}`,
+                        },
+                        on: { click: () => actions.forget(space.id) },
+                      },
+                      icon(UI_ICONS.close),
+                    )
+                  : null,
               ),
             ),
           ),

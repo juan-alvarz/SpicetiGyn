@@ -614,3 +614,22 @@ html[data-nl-switching] .nl-tint {
     padding: 6px 2px;
   }
 }
+
+.nl-spaces-now {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.05);
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12.5px;
+}
+
+.nl-spaces-now--playing {
+  color: var(--spice-text, #fff);
+  box-shadow: inset 3px 0 0 var(--nl-space-accent, var(--spice-button, #1db954));
+}
+
+.nl-spaces-others li {
+  display: flex;
+  align-items: center;
+}

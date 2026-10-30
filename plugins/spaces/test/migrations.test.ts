@@ -58,7 +58,7 @@ describe("migration v0 → v1", () => {
   });
 
   it("falls back to the defaults when there is nothing to migrate", () => {
-    expect(migrateV0toV1(null).spaces.map((x) => x.id)).toEqual(["focus", "chill"]);
-    expect(migrateV0toV1({ spaces: {} }).spaces).toHaveLength(2);
+    expect(migrateV0toV1(null).spaces.map((x) => x.id)).toEqual(["spotify"]);
+    expect(migrateV0toV1({ spaces: {} }).spaces).toHaveLength(1);
   });
 });

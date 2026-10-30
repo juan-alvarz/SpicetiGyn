@@ -25,6 +25,15 @@ function pick(value: unknown, path: Array<string | number>): unknown {
 const str = (v: unknown) => (typeof v === "string" && v.length > 0 ? v : null);
 
 export function createMetadataAdapter(s: SpicetifyLike, log: Logger): MetadataAdapter {
+  // Spotify's GraphQL queries can fail with an empty locale; Spicetify's own extensions pass it.
+  const locale = () => {
+    try {
+      return s.Locale?.getLocale?.() || "en";
+    } catch {
+      return "en";
+    }
+  };
+
   const graphql = async (definition: string, variables: Record<string, unknown>) => {
     const request = s.GraphQL?.Request;
     const def = s.GraphQL?.Definitions?.[definition];
@@ -35,7 +44,34 @@ export function createMetadataAdapter(s: SpicetifyLike, log: Logger): MetadataAd
       );
       return null;
     }
-    return await request(def, variables);
+    return await request(def, { ...variables, locale: locale() });
+  };
+
+  /** PlaylistAPI.getMetadata, then the Cosmos endpoint Spicetify's own Bookmark extension uses. */
+  const playlist = async (uri: string): Promise<ItemInfo | null> => {
+    const getMetadata = s.Platform?.PlaylistAPI?.getMetadata;
+    if (typeof getMetadata === "function") {
+      try {
+        const meta = await getMetadata(uri);
+        const name = str(meta?.name);
+        if (name) return { kind: "playlist", name, image: str(meta?.images?.[0]?.url) };
+      } catch (error) {
+        log.debug("PlaylistAPI.getMetadata failed; trying Cosmos", error);
+      }
+    }
+    const get = s.CosmosAsync?.get;
+    if (typeof get !== "function") {
+      log.warnOnce(
+        "meta.playlist",
+        "No playlist metadata API was found; names are filled in later.",
+      );
+      return null;
+    }
+    const res = await get(`sp://core-playlist/v1/playlist/${uri}/metadata`, {
+      policy: { picture: true, name: true },
+    });
+    const name = str(pick(res, ["metadata", "name"]));
+    return name ? { kind: "playlist", name, image: str(pick(res, ["metadata", "picture"])) } : null;
   };
 
   return {
@@ -43,30 +79,14 @@ export function createMetadataAdapter(s: SpicetifyLike, log: Logger): MetadataAd
       const item = parseItemUri(uri);
       if (!item) return null;
       try {
-        if (item.kind === "playlist") {
-          const getMetadata = s.Platform?.PlaylistAPI?.getMetadata;
-          if (typeof getMetadata !== "function") {
-            log.warnOnce(
-              "meta.playlist",
-              "PlaylistAPI.getMetadata is missing; names are filled in later.",
-            );
-            return null;
-          }
-          const meta = await getMetadata(uri);
-          const name = str(meta?.name);
-          return name ? { kind: "playlist", name, image: str(meta?.images?.[0]?.url) } : null;
-        }
+        if (item.kind === "playlist") return await playlist(uri);
         if (item.kind === "album") {
-          const res = await graphql("getAlbum", { uri, locale: "", offset: 0, limit: 1 });
+          const res = await graphql("getAlbum", { uri, offset: 0, limit: 1 });
           const name = str(pick(res, ["data", "albumUnion", "name"]));
           const image = str(pick(res, ["data", "albumUnion", "coverArt", "sources", 0, "url"]));
           return name ? { kind: "album", name, image } : null;
         }
-        const res = await graphql("queryArtistOverview", {
-          uri,
-          locale: "",
-          includePrerelease: false,
-        });
+        const res = await graphql("queryArtistOverview", { uri, includePrerelease: false });
         const name = str(pick(res, ["data", "artistUnion", "profile", "name"]));
         const image = str(
           pick(res, ["data", "artistUnion", "visuals", "avatarImage", "sources", 0, "url"]),

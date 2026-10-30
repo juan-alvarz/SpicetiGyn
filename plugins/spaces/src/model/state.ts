@@ -27,13 +27,10 @@ const emptySpace = (id: string, name: string, color: ColorId, icon: IconId): Spa
 
 export function defaultState(): SpacesState {
   return {
-    currentId: "focus",
+    currentId: "spotify",
     playedIn: null,
     settings: { ...DEFAULT_SETTINGS },
-    spaces: [
-      emptySpace("focus", "Focus", "fjord", "target"),
-      emptySpace("chill", "Chill", "ember", "cup"),
-    ],
+    spaces: [emptySpace("spotify", "Spotify", "fjord", "disc")],
   };
 }
 

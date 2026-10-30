@@ -37,4 +37,5 @@ export const UI_ICONS = {
     `<g fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></g>`,
   ),
   back: icon(`<path ${stroke} d="M15 5l-7 7 7 7"/>`),
+  close: icon(`<path ${stroke} d="M7 7l10 10M17 7 7 17"/>`),
 } as const;

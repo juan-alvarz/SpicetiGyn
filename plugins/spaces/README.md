@@ -13,13 +13,18 @@ Switch spaces and the music fades out, the other space picks up where you left i
 
 ## Using it
 
-|                                 | macOS                             | Windows / Linux                   |
-| ------------------------------- | --------------------------------- | --------------------------------- |
-| Open the panel                  | Spaces button in the top bar      | Spaces button in the top bar      |
-| Switch to space 1–9             | ⌘⌥1 … ⌘⌥9                         | Ctrl+Alt+1 … Ctrl+Alt+9           |
-| Add a playlist, album or artist | right-click it → **Add to space** | right-click it → **Add to space** |
+You start with one space, **Spotify**. Make more with **+**, for example Focus, Chill or one per project.
 
-In the panel you can switch spaces, open a space's items, add the page you're on, move or remove items (**⋯**), and create, edit or delete spaces (**New**, the pencil, or right-click a space). Deleting a space moves its items to the space next to it.
+|                                 | macOS                                      | Windows / Linux                            |
+| ------------------------------- | ------------------------------------------ | ------------------------------------------ |
+| Switch spaces                   | the switcher at the bottom of Your Library | the switcher at the bottom of Your Library |
+| Switch to space 1–9             | ⌘⌥1 … ⌘⌥9                                  | Ctrl+Alt+1 … Ctrl+Alt+9                    |
+| Open the panel                  | click the current space in the switcher    | click the current space in the switcher    |
+| Add a playlist, album or artist | right-click it → **Add to space**          | right-click it → **Add to space**          |
+
+Each space works like a browser tab for music: whatever you play while a space is open belongs to that space. Switch away and it's paused and saved; come back and it continues from the same second. The panel shows what the current space is playing, and under **Other spaces** what each other space saved. **×** forgets a space's saved song.
+
+In the panel you can open a space's items, add the page you're on, move or remove items (**⋯**), and create, edit or delete spaces (right-click a space to edit it). Deleting a space moves its items to the space next to it.
 
 **Settings** (bottom of the panel):
 

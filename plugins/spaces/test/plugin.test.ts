@@ -2,8 +2,9 @@ import { getHost, type RunningPlugin, start } from "@nordlys/core";
 import { createSpicetifyMock, type MockOptions } from "@nordlys/spicetify-mock";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SpaceInfo } from "../src/api";
-import { defaultState, updateSettings } from "../src/model/state";
+import { updateSettings } from "../src/model/state";
 import spaces from "../src/plugin";
+import { twoSpaces } from "./fixtures";
 
 const KEY = "nordlys:spaces:state";
 let running: RunningPlugin | null = null;
@@ -24,7 +25,7 @@ async function boot(options: MockOptions = {}, seed?: Record<string, string>) {
     // A short crossfade keeps the tests fast while still exercising the fade.
     storage.set(
       KEY,
-      JSON.stringify({ v: 1, data: updateSettings(defaultState(), { crossfadeMs: 100 }) }),
+      JSON.stringify({ v: 1, data: updateSettings(twoSpaces(), { crossfadeMs: 100 }) }),
     );
   }
   const mock = createSpicetifyMock({ storage, ...options });
@@ -58,6 +59,71 @@ describe("Spaces plugin", () => {
     expect(root.style.getPropertyValue("--nl-space-accent-rgb")).toBe("142, 214, 227");
     expect(controls.topbarButtons()[0]?.getAttribute("aria-label")).toBe("Spaces: Focus");
     expect(controls.bindings()).toEqual(Array.from({ length: 9 }, (_, i) => `mod+alt+${i + 1}`));
+  });
+
+  it("starts with one space named Spotify on a fresh install", async () => {
+    await boot({}, {});
+    expect(root.dataset.nlSpace).toBe("spotify");
+    const names = [...document.querySelectorAll(".nl-dock-btn[data-space]")].map(
+      (b) => b.textContent,
+    );
+    expect(names).toEqual(["Spotify"]);
+  });
+
+  it("shows what the current space is playing, and can forget another space's song", async () => {
+    const { controls } = await boot();
+    const now = () => document.querySelector(".nl-spaces-now")?.textContent;
+    controls.load("spotify:playlist:deepwork", "spotify:track:grid");
+    document.querySelector<HTMLButtonElement>('.nl-dock-btn[data-space="focus"]')?.click();
+    expect(now()).toBe("Playing in Focus: Grid Lines");
+
+    controls.press("mod+alt+2");
+    await waitFor(() => root.dataset.nlSpace === "chill" && !("nlSwitching" in root.dataset));
+    expect(now()).toBe("Nothing played in Chill yet. Whatever you play now stays with this space.");
+
+    controls.load("spotify:playlist:slowevening", "spotify:track:tea");
+    await waitFor(() => now() === "Playing in Chill: Tea at Four");
+    const focus = document.querySelector('.nl-spaces-other[data-space="focus"]');
+    expect(focus?.textContent).toContain("Paused · Grid Lines");
+
+    document
+      .querySelector<HTMLButtonElement>('[aria-label="Forget the song saved in Focus"]')
+      ?.click();
+    await waitFor(() =>
+      Boolean(
+        document
+          .querySelector('.nl-spaces-other[data-space="focus"]')
+          ?.textContent?.includes("Nothing played yet"),
+      ),
+    );
+  });
+
+  it("names an added page after its title when the lookup finds nothing", async () => {
+    const { saved, controls } = await boot();
+    const title = document.createElement("div");
+    title.dataset.testid = "entityTitle";
+    title.innerHTML = "<h1>Late Night Mix</h1>";
+    document.body.appendChild(title);
+    controls.navigate("/playlist/unknownmix");
+    document.querySelector<HTMLButtonElement>('.nl-dock-btn[data-space="focus"]')?.click();
+    [...document.querySelectorAll<HTMLButtonElement>(".nl-spaces-panel .nl-btn")]
+      .find((b) => b.textContent?.startsWith("Add this page"))
+      ?.click();
+    await waitFor(() => saved().spaces[0].items.length === 1);
+    expect(saved().spaces[0].items[0]).toMatchObject({
+      uri: "spotify:playlist:unknownmix",
+      name: "Late Night Mix",
+    });
+    title.remove();
+  });
+
+  it("finds playlist names through Cosmos when PlaylistAPI is missing", async () => {
+    const { controls, saved } = await boot({ metadata: false });
+    controls.contextMenu(["spotify:playlist:codingflow"])[0]?.items?.[0]?.click?.();
+    await waitFor(() => saved().spaces[0].items[0]?.name === "Coding Flow");
+    expect(controls.callsTo("CosmosAsync.get")).toEqual([
+      ["sp://core-playlist/v1/playlist/spotify:playlist:codingflow/metadata"],
+    ]);
   });
 
   it("pins a space switcher to the bottom of the library sidebar", async () => {
@@ -181,7 +247,7 @@ describe("Spaces plugin", () => {
   it("toggles the optional tint", async () => {
     await boot(
       {},
-      { [KEY]: JSON.stringify({ v: 1, data: updateSettings(defaultState(), { tint: true }) }) },
+      { [KEY]: JSON.stringify({ v: 1, data: updateSettings(twoSpaces(), { tint: true }) }) },
     );
     expect(root.dataset.nlTint).toBe("");
     expect(document.querySelectorAll(".nl-tint")).toHaveLength(1);
@@ -210,7 +276,7 @@ describe("Spaces plugin", () => {
   it("leaves nothing behind when stopped", async () => {
     const { controls, host } = await boot(
       {},
-      { [KEY]: JSON.stringify({ v: 1, data: updateSettings(defaultState(), { tint: true }) }) },
+      { [KEY]: JSON.stringify({ v: 1, data: updateSettings(twoSpaces(), { tint: true }) }) },
     );
     controls.topbarButtons()[0]?.click();
     await running?.stop();
