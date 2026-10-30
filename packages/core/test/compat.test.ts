@@ -114,6 +114,35 @@ describe("ui adapters", () => {
     expect(clicked).toEqual([["spotify:playlist:x"]]);
   });
 
+  it("hands shortcuts over to Mousetrap when Spicetify finds it late", async () => {
+    quiet();
+    vi.useFakeTimers();
+    try {
+      const { ctx, controls, Spicetify } = await withContext({ mousetrap: false });
+      const fn = vi.fn();
+      ctx.ui.shortcut("mod+alt+2", fn);
+      controls.press("mod+alt+2");
+      expect(fn).toHaveBeenCalledTimes(1);
+
+      const bound = new Map<string, () => void>();
+      Spicetify.Mousetrap = {
+        bind: (k: string, cb: () => void) => void bound.set(k, cb),
+        unbind: (k: string) => void bound.delete(k),
+      };
+      await vi.advanceTimersByTimeAsync(300);
+      expect([...bound.keys()]).toEqual(["mod+alt+2"]);
+
+      // The keydown bridge is gone, so a key press doesn't fire twice.
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", { code: "Digit2", metaKey: true, altKey: true }),
+      );
+      bound.get("mod+alt+2")?.();
+      expect(fn).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("uses a keydown listener when Mousetrap is missing", async () => {
     quiet();
     for (const os of ["osx", "windows"] as const) {

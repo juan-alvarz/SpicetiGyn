@@ -43,7 +43,15 @@ function isTyping(target: EventTarget | null): boolean {
   return el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
 }
 
-/** Mousetrap, then a plain keydown listener. Returns the unbind function. */
+/** How long to keep looking for Mousetrap, which Spicetify finds inside Spotify's code lazily. */
+const MOUSETRAP_WAIT_MS = 20_000;
+const MOUSETRAP_POLL_MS = 250;
+
+/**
+ * Mousetrap, then a plain keydown listener. Spicetify sets `Spicetify.Mousetrap` only once it
+ * finds it in Spotify's code, which can be after plugins start, so the keydown listener is a
+ * bridge: it hands over to Mousetrap as soon as that appears. Returns the unbind function.
+ */
 export function bindShortcut(
   s: SpicetifyLike,
   combo: string,
@@ -51,21 +59,44 @@ export function bindShortcut(
   os: OS,
   log: Logger,
 ): () => void {
-  const mousetrap = s.Mousetrap;
-  if (typeof mousetrap?.bind === "function") {
+  const viaMousetrap = (): (() => void) | null => {
+    const mousetrap = s.Mousetrap;
+    if (typeof mousetrap?.bind !== "function") return null;
     mousetrap.bind(combo, (event) => {
       event?.preventDefault?.();
       fn();
       return false;
     });
     return () => mousetrap.unbind?.(combo);
-  }
-  log.warnOnce("ui.mousetrap", "Mousetrap is missing; using a keydown listener for shortcuts.");
+  };
+
+  const direct = viaMousetrap();
+  if (direct) return direct;
+
   const handler = (event: KeyboardEvent) => {
     if (isTyping(event.target) || !matchesCombo(event, combo, os)) return;
     event.preventDefault();
     fn();
   };
   window.addEventListener("keydown", handler);
-  return () => window.removeEventListener("keydown", handler);
+  let unbind = () => window.removeEventListener("keydown", handler);
+
+  const started = Date.now();
+  const timer = setInterval(() => {
+    const viaTrap = viaMousetrap();
+    if (viaTrap) {
+      clearInterval(timer);
+      window.removeEventListener("keydown", handler);
+      unbind = viaTrap;
+      log.debug(`Shortcut ${combo} moved to Mousetrap.`);
+    } else if (Date.now() - started > MOUSETRAP_WAIT_MS) {
+      clearInterval(timer);
+      log.warnOnce("ui.mousetrap", "Mousetrap never appeared; shortcuts use a keydown listener.");
+    }
+  }, MOUSETRAP_POLL_MS);
+
+  return () => {
+    clearInterval(timer);
+    unbind();
+  };
 }
