@@ -38,9 +38,13 @@ type View =
   | { kind: "edit"; id: string | null; draft: SpaceDraft }
   | { kind: "item"; uri: string };
 
+/** What the panel shows when it opens: the overview, the new-space form, or a space's editor. */
+export type PanelStart = "main" | "new" | { edit: string };
+
 export interface Panel {
+  /** Opens the panel at `anchor`, or closes it if it is already open there. */
   toggle(anchor: HTMLElement | null): void;
-  open(anchor: HTMLElement | null): void;
+  open(anchor: HTMLElement | null, start?: PanelStart): void;
   close(): void;
   /** Redraws an open panel (state or page changed). Leaves the editor alone while typing. */
   refresh(): void;
@@ -359,8 +363,10 @@ export function createPanel(deps: {
 
   const mainView = (state: SpacesState): Child => {
     const space = currentSpace(state);
+    // Opened from the sidebar dock, the dock already is the switcher.
+    const fromDock = anchor?.closest(".nl-spaces-dock-wrap") != null;
     return [
-      switcher(state),
+      fromDock ? null : switcher(state),
       currentSection(state, space),
       othersSection(state),
       settingsSection(state.settings),
@@ -598,8 +604,8 @@ export function createPanel(deps: {
     return h("div", { class: "nl-spaces-panel" }, content);
   };
 
-  const open = (a: HTMLElement | null) => {
-    if (popover?.isOpen) return;
+  const open = (a: HTMLElement | null, start: PanelStart = "main") => {
+    popover?.close();
     anchor = a;
     view = { kind: "main" };
     popover = ui.popover(anchor, render, {
@@ -607,6 +613,11 @@ export function createPanel(deps: {
       label: "Spaces",
       onClose: () => (popover = null),
     });
+    if (start === "main") return;
+    const state = getState();
+    const space = start === "new" ? null : state.spaces.find((s) => s.id === start.edit);
+    if (start === "new") go(newView(state));
+    else if (space) go(editView(space));
   };
 
   return {
@@ -615,7 +626,7 @@ export function createPanel(deps: {
     },
     open,
     toggle(a) {
-      if (popover?.isOpen) popover.close();
+      if (popover?.isOpen && anchor === a) popover.close();
       else open(a);
     },
     close: () => popover?.close(),

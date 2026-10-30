@@ -14,9 +14,9 @@ async function load(
   await page.goto(`file://${path.join(DIST, "test/index.html")}`);
   await page.addScriptTag({ path: path.join(DIST, "test/mock.js") });
   for (const bundle of bundles) await page.addScriptTag({ path: path.join(DIST, bundle) });
-  // Spaces is up once its button exists (in the top bar, or the player bar on old versions).
+  // Spaces is up once its sidebar switcher is there.
   if (bundles.some((b) => b.includes("spaces"))) {
-    await expect(page.locator("#nl-mock-topbar button, #nl-mock-playbar button")).toHaveCount(1);
+    await expect(page.locator("#Desktop_LeftSidebar_Id .nl-spaces-dock")).toBeVisible();
   }
 }
 
@@ -153,4 +153,43 @@ test("still works on old Spotify versions without Topbar, SubMenu or PlayerAPI",
     window.__mock?.contextMenu(["spotify:album:northbound"]).map((m) => m.label),
   );
   expect(labels).toEqual(["Add to space: Focus", "Add to space: Chill"]);
+});
+
+test("on Spotify 1.3.x, where top bar buttons can't attach, the sidebar switcher does everything", async ({
+  page,
+}) => {
+  await load(page, { topbarAttaches: false });
+  await expect(page.locator(".spicetify-topbar-button")).toHaveCount(0);
+  const dock = page.getByRole("toolbar", { name: "Spaces" }).first();
+
+  // Pinned to the bottom of the sidebar, inside it, whatever the library scroll position.
+  const sidebar = await page.locator("#Desktop_LeftSidebar_Id").boundingBox();
+  const box = await dock.boundingBox();
+  if (!sidebar || !box) throw new Error("no layout");
+  expect(box.x).toBeGreaterThanOrEqual(sidebar.x);
+  expect(box.x + box.width).toBeLessThanOrEqual(sidebar.x + sidebar.width);
+  expect(sidebar.y + sidebar.height - (box.y + box.height)).toBeLessThan(20);
+  await page.locator("#Desktop_LeftSidebar_Id nav").evaluate((nav) => nav.scrollTo(0, 99999));
+  expect((await dock.boundingBox())?.y).toBe(box.y);
+
+  await dock.getByRole("button", { name: "Chill" }).click();
+  await expect(html(page)).toHaveAttribute("data-nl-space", "chill");
+
+  await dock.getByRole("button", { name: "Chill" }).click();
+  const panel = page.getByRole("dialog", { name: "Spaces" });
+  await expect(panel.locator(".nl-spaces-current .nl-spaces-title")).toHaveText("Chill");
+  // Opens above the dock, inside the window.
+  const panelBox = await panel.boundingBox();
+  expect(panelBox && panelBox.y + panelBox.height).toBeLessThanOrEqual(box.y);
+  // …and never into the 64px top bar.
+  expect(panelBox?.y).toBeGreaterThanOrEqual(64);
+  await expect(panel.locator(".nl-spaces-switcher")).toHaveCount(0);
+
+  await page.keyboard.press("Escape");
+  await dock.getByRole("button", { name: "New space" }).click();
+  await panel.getByRole("textbox").fill("Gym");
+  await panel.getByRole("button", { name: "Create space" }).click();
+  await expect(html(page)).toHaveAttribute("data-nl-space", "gym");
+  await expect(dock.locator(".nl-dock-btn[data-space]")).toHaveCount(3);
+  await page.screenshot({ path: test.info().outputPath("dock.png") });
 });

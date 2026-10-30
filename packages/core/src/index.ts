@@ -17,6 +17,7 @@ export {
 } from "./compat/navigation";
 export type { PlayerAdapter, PlayerState, PlayTarget } from "./compat/player";
 export type { Feature, FeatureReport } from "./compat/ready";
+export type { SlotHandle, SlotName } from "./compat/slots";
 export type { SpicetifyLike } from "./compat/spicetify";
 export type { ButtonHandle, ButtonOptions } from "./compat/topbar";
 export { getHost, HOST_PROTOCOL, isNoHandlerError, NoHandlerError, type NordlysHost } from "./host";

@@ -18,7 +18,8 @@ export interface PopoverOptions {
 const GAP = 8;
 const MARGIN = 12;
 /** Spotify's top bar across versions, then generic landmarks. Only used for placement. */
-const TOP_BAR = ".Root__globalNav, .Root__top-bar, header, [role='banner']";
+const TOP_BAR =
+  "#global-nav-bar, [data-testid='topbar'], .Root__globalNav, .Root__top-bar, [role='banner']";
 
 /**
  * Opens a fixed-position popover under `anchor` (or above it when there is more room).
@@ -51,16 +52,20 @@ export function openPopover(
     const vw = document.documentElement.clientWidth || window.innerWidth;
     const vh = document.documentElement.clientHeight || window.innerHeight;
     const rect = anchor?.getBoundingClientRect() ?? { left: vw / 2, width: 0, top: 64, bottom: 64 };
-    // Open below the whole top bar, not just the button, so nothing overlaps the window controls.
-    const bar = anchor?.closest(TOP_BAR)?.getBoundingClientRect();
-    const bottom = bar && bar.bottom > rect.bottom ? bar.bottom : rect.bottom;
+    // Never overlap Spotify's top bar, where macOS draws the traffic lights and Windows its
+    // window buttons: open below all of it, and when opening upwards, stop under it.
+    const bar = document.querySelector(TOP_BAR)?.getBoundingClientRect();
+    const barBottom = bar && bar.height > 0 ? bar.bottom : 0;
+    const inBar = anchor ? anchor.closest(TOP_BAR) !== null : false;
+    const bottom = inBar ? Math.max(rect.bottom, barBottom) : rect.bottom;
+    const ceiling = Math.max(MARGIN, barBottom + GAP);
     const width = Math.min(root.offsetWidth || 340, vw - MARGIN * 2);
     const left = Math.min(
       Math.max(rect.left + rect.width / 2 - width / 2, MARGIN),
       vw - width - MARGIN,
     );
     const below = vh - bottom - GAP - MARGIN;
-    const above = rect.top - GAP - MARGIN;
+    const above = rect.top - GAP - ceiling;
     root.style.left = `${Math.round(left)}px`;
     if (below >= 240 || below >= above) {
       root.style.top = `${Math.round(bottom + GAP)}px`;

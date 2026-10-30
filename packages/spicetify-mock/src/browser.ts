@@ -18,9 +18,16 @@ const frame = `
     <div style="flex:1"></div>
     <div id="nl-mock-topbar" style="display:flex;gap:8px"></div>
   </header>
-  <main class="Root__main-view" style="padding:24px;color:#fff">
-    <h1 id="nl-mock-path">/</h1>
-  </main>
+  <div style="display:flex;height:calc(100vh - 136px)">
+    <div id="Desktop_LeftSidebar_Id" style="width:300px;flex:none;overflow:hidden;background:#121212;color:#fff">
+      <nav aria-label="Main" style="height:100%;overflow:auto;padding:12px">
+        ${Array.from({ length: 30 }, (_, i) => `<div style="padding:8px 0">Library item ${i + 1}</div>`).join("")}
+      </nav>
+    </div>
+    <main class="Root__main-view" style="flex:1;padding:24px;color:#fff">
+      <h1 id="nl-mock-path">/</h1>
+    </main>
+  </div>
   <footer class="Root__now-playing-bar" style="position:fixed;bottom:0;left:0;right:0;height:72px;background:#111">
     <div id="nl-mock-playbar"></div>
   </footer>`;

@@ -1,6 +1,6 @@
 import { getHost, type RunningPlugin, start } from "@nordlys/core";
 import { createSpicetifyMock, type MockOptions } from "@nordlys/spicetify-mock";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { SpaceInfo } from "../src/api";
 import { defaultState, updateSettings } from "../src/model/state";
 import spaces from "../src/plugin";
@@ -37,9 +37,16 @@ async function boot(options: MockOptions = {}, seed?: Record<string, string>) {
 
 const root = document.documentElement;
 
+beforeEach(() => {
+  const sidebar = document.createElement("div");
+  sidebar.id = "Desktop_LeftSidebar_Id";
+  document.body.appendChild(sidebar);
+});
+
 afterEach(async () => {
   await running?.stop();
   running = null;
+  document.getElementById("Desktop_LeftSidebar_Id")?.remove();
 });
 
 describe("Spaces plugin", () => {
@@ -51,6 +58,32 @@ describe("Spaces plugin", () => {
     expect(root.style.getPropertyValue("--nl-space-accent-rgb")).toBe("142, 214, 227");
     expect(controls.topbarButtons()[0]?.getAttribute("aria-label")).toBe("Spaces: Focus");
     expect(controls.bindings()).toEqual(Array.from({ length: 9 }, (_, i) => `mod+alt+${i + 1}`));
+  });
+
+  it("pins a space switcher to the bottom of the library sidebar", async () => {
+    const { controls } = await boot({ topbarAttaches: false });
+    const dock = document.querySelector("#Desktop_LeftSidebar_Id .nl-spaces-dock");
+    expect(dock?.getAttribute("role")).toBe("toolbar");
+    const buttons = [
+      ...(dock?.querySelectorAll<HTMLButtonElement>(".nl-dock-btn[data-space]") ?? []),
+    ];
+    expect(buttons.map((b) => b.textContent)).toEqual(["Focus", "Chill"]);
+    expect(buttons[0]?.getAttribute("aria-pressed")).toBe("true");
+
+    buttons[1]?.click();
+    await waitFor(() => root.dataset.nlSpace === "chill" && !("nlSwitching" in root.dataset));
+    expect(
+      document.querySelector('.nl-dock-btn[data-space="chill"]')?.getAttribute("aria-pressed"),
+    ).toBe("true");
+
+    // Clicking the current space opens the panel; "+" opens the new-space form.
+    document.querySelector<HTMLButtonElement>('.nl-dock-btn[data-space="chill"]')?.click();
+    expect(document.querySelector(".nl-spaces-panel .nl-spaces-title")?.textContent).toBe("Chill");
+    document.querySelector<HTMLButtonElement>(".nl-dock-btn--new")?.click();
+    expect(document.querySelector(".nl-spaces-editor .nl-spaces-title")?.textContent).toBe(
+      "New space",
+    );
+    expect(controls.topbarButtons()).toHaveLength(0);
   });
 
   it("remembers what each space played and picks it back up", async () => {
@@ -191,7 +224,8 @@ describe("Spaces plugin", () => {
     expect(controls.bindings()).toEqual([]);
     expect(controls.listenerCount()).toBe(0);
     expect(document.querySelectorAll('[data-nl-plugin="spaces"]')).toHaveLength(0);
-    expect(document.querySelectorAll(".nl-popover, .nl-tint")).toHaveLength(0);
+    expect(document.querySelectorAll(".nl-popover, .nl-tint, .nl-spaces-dock")).toHaveLength(0);
+    expect(document.getElementById("Desktop_LeftSidebar_Id")?.getAttribute("style") ?? "").toBe("");
     expect(root.dataset.nlSpace).toBeUndefined();
     expect(root.dataset.nlTint).toBeUndefined();
     expect(root.style.getPropertyValue("--nl-space-accent")).toBe("");

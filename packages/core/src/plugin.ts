@@ -5,6 +5,7 @@ import { createNavigationAdapter, type NavigationAdapter } from "./compat/naviga
 import { createPlayerAdapter, type PlayerAdapter } from "./compat/player";
 import { detectFeatures, type FeatureReport, waitForSpicetify } from "./compat/ready";
 import { bindShortcut } from "./compat/shortcuts";
+import { mountInSlot, type SlotHandle, type SlotName } from "./compat/slots";
 import type { SpicetifyLike } from "./compat/spicetify";
 import { type ButtonHandle, type ButtonOptions, createButton } from "./compat/topbar";
 import { getHost } from "./host";
@@ -41,6 +42,11 @@ export interface UiApi {
   ): PopoverHandle;
   /** A right-click submenu (or flat items on versions without ContextMenu.SubMenu). */
   contextSubmenu(options: SubmenuOptions): SubmenuHandle;
+  /**
+   * Pins your own element to a named place in Spotify's layout, e.g. "left-sidebar-bottom",
+   * and keeps it there when Spotify re-renders. Removed on stop.
+   */
+  slot(name: SlotName, element: HTMLElement): SlotHandle;
   /** "mod+alt+1": ⌘⌥1 on macOS, Ctrl+Alt+1 elsewhere. */
   shortcut(combo: string, fn: () => void): void;
   toast(message: string, options?: { error?: boolean }): void;
@@ -181,6 +187,11 @@ export async function start(
       },
       contextSubmenu(o) {
         const handle = createSubmenu(spicetify, o, log);
+        track(() => handle.remove());
+        return handle;
+      },
+      slot(name, element) {
+        const handle = mountInSlot(name, element, log);
         track(() => handle.remove());
         return handle;
       },

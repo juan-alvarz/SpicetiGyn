@@ -28,6 +28,11 @@ export interface MockOptions {
   mousetrap?: boolean;
   history?: boolean;
   metadata?: boolean;
+  /**
+   * false simulates Spotify 1.3.x, where Spicetify creates Topbar.Button elements but can't
+   * find the top bar to put them in.
+   */
+  topbarAttaches?: boolean;
   /** How long a play() call takes before "songchange" fires. */
   latencyMs?: number;
   catalog?: Record<string, CatalogEntry>;
@@ -116,6 +121,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     playUri: true,
     seek: true,
     topbar: true,
+    topbarAttaches: true,
     playbar: true,
     contextMenu: true,
     subMenu: true,
@@ -245,7 +251,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
       location.pathname = pathname;
       for (const fn of [...historyListeners]) fn({ pathname });
       // Like Spicetify, re-attach every top bar button it ever created after a page change.
-      doc.getElementById("nl-mock-topbar")?.append(...topbarStash);
+      if (o.topbarAttaches) doc.getElementById("nl-mock-topbar")?.append(...topbarStash);
     },
     listen(fn: (loc: { pathname: string }) => void) {
       historyListeners.add(fn);
@@ -324,7 +330,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
       this.label = label;
       this.icon = icon;
       topbarStash.add(this.element);
-      container("nl-mock-topbar").appendChild(this.element);
+      if (o.topbarAttaches) container("nl-mock-topbar").appendChild(this.element);
     }
     set label(value: string) {
       this.button.setAttribute("aria-label", value);

@@ -30,6 +30,7 @@ import {
 } from "./model/state";
 import css from "./styles.css";
 import { createSwitcher, snapshotOf } from "./switcher";
+import { createDock } from "./ui/dock";
 import { createPanel, displayName } from "./ui/panel";
 import { createStyleBridge } from "./ui/style-bridge";
 
@@ -201,11 +202,27 @@ export default definePlugin({
       button?.setLabel(`Spaces: ${space.name}`);
       button?.setIcon(SPACE_ICONS[space.icon]);
     }
-    if (!button) {
+
+    // The switcher pinned to the bottom of the library sidebar. This is the main way in: on
+    // Spotify 1.3.x Spicetify can't attach top bar buttons at all.
+    const dock = createDock(ctx.platform, {
+      switchTo: (id) => void switchTo(id),
+      openPanel(anchor, start) {
+        refreshMissingInfo();
+        if (start) panel.open(anchor, start);
+        else panel.toggle(anchor);
+      },
+    });
+    dock.render(store.get());
+    const dockSlot = ctx.ui.slot("left-sidebar-bottom", dock.element);
+
+    const placementCheck = setTimeout(() => {
+      if (button?.attached || dockSlot.attached) return;
       ctx.ui.toast(
-        `Spaces: no top bar button in this Spotify version. Switch with ${ctx.platform.formatShortcut("mod+alt+1")}–9.`,
+        `Spaces couldn't add its switcher in this Spotify version. Switch with ${ctx.platform.formatShortcut("mod+alt+1")}–9.`,
       );
-    }
+    }, 10_000);
+    ctx.onDispose(() => clearTimeout(placementCheck));
 
     // ── context menu and shortcuts ─────────────────────────────────────────
     const menu = ctx.ui.contextSubmenu({
@@ -265,9 +282,15 @@ export default definePlugin({
       state.spaces.map((s) => `${s.id}:${s.name}`).join("|");
     let lastSignature = signature(store.get());
     let lastMenuSignature = menuSignature(store.get());
+    let lastDock = "";
     store.subscribe((state) => {
       panel.refresh();
       const next = signature(state);
+      const nextDock = `${state.currentId}|${next}`;
+      if (nextDock !== lastDock) {
+        lastDock = nextDock;
+        dock.render(state);
+      }
       if (next === lastSignature) return;
       lastSignature = next;
       const nextMenu = menuSignature(state);
