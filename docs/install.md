@@ -1,53 +1,212 @@
 # Installing Nordlys
 
-Everything here needs [Spicetify](https://spicetify.app) installed and applied first. Each plugin and theme installs on its own; none of them needs another.
+This guide installs the **Spaces** extension and, if you want, one of the **Nordlys themes** into the Spicetify you already have. Each one works on its own.
 
-Spicetify keeps its files in a **userdata** folder. Find yours with `spicetify path userdata`:
+There are two ways:
 
-|              | Usual location        |
-| ------------ | --------------------- |
-| macOS, Linux | `~/.config/spicetify` |
-| Windows      | `%APPDATA%\spicetify` |
+- **[Quick way](#quick-way-from-the-source-code)**: two commands do everything for you. You need Node.js.
+- **[By hand](#by-hand)**: you copy the files into Spicetify's folder yourself. No Node.js needed if you already have the files.
 
-## From the Spicetify Marketplace
+> Not released yet? Until the first release, the only way to get the files is to build them (the quick way, or [Get the files](#2-get-the-files) → option C).
 
-1. Install the [Marketplace](https://github.com/spicetify/marketplace/wiki/Installation) if you haven't.
-2. Open **Marketplace** in Spotify's sidebar and search for **Nordlys**.
-3. Click **Install** on an extension, or on a theme under **Themes**.
+---
 
-## Extensions
+## Before you start
 
-Download the `.js` file (for example `nordlys-spaces.js`) from the [releases page](https://github.com/juan-alvarz/SpicetiGyn/releases).
-
-macOS and Linux:
+Spicetify must already be installed and working. Check it in a terminal (**Terminal** on macOS, **PowerShell** on Windows):
 
 ```bash
-cp nordlys-spaces.js "$(spicetify path userdata)/Extensions/"
+spicetify -v
 ```
+
+It should print a version number. If it says the command isn't found, install Spicetify first: <https://spicetify.app/docs/getting-started>.
+
+---
+
+## Quick way (from the source code)
+
+You need [Node.js](https://nodejs.org) 20.19 or newer.
+
+1. Download the code and go into its folder:
+
+   ```bash
+   git clone https://github.com/juan-alvarz/SpicetiGyn.git
+   ```
+
+   ```bash
+   cd SpicetiGyn
+   ```
+
+2. Set up the tools once. Corepack comes with Node.js and provides pnpm; `corepack disable` undoes it.
+
+   ```bash
+   corepack enable
+   ```
+
+   ```bash
+   pnpm install
+   ```
+
+3. Build everything and copy it into your Spicetify folder:
+
+   ```bash
+   pnpm dev install
+   ```
+
+4. Turn on Spaces. Spotify restarts.
+
+   ```bash
+   pnpm dev enable spaces
+   ```
+
+5. Optional: turn on a theme (pick one).
+
+   ```bash
+   pnpm dev enable codex Bone
+   ```
+
+   ```bash
+   pnpm dev enable spaces-theme FjordDusk
+   ```
+
+Done. Jump to [Check that it worked](#check-that-it-worked).
+
+To look at the files yourself, `pnpm dev open` opens your Spicetify folder and `pnpm dev open dist` opens the built files.
+
+---
+
+## By hand
+
+### 1. Open your Spicetify folder
+
+Spicetify keeps extensions and themes in its **userdata folder**. Inside it you'll find (or will create) two folders:
+
+```
+spicetify/
+├─ Extensions/   ← extensions go here (.js files)
+├─ Themes/       ← themes go here (one folder per theme)
+└─ config-xpui.ini
+```
+
+**macOS.** In Terminal, this opens the folder in Finder:
 
 ```bash
-spicetify config extensions nordlys-spaces.js
+open "$(spicetify path userdata)"
 ```
+
+Or in Finder: **Go → Go to Folder…** (⇧⌘G), type `~/.config/spicetify`, and press Return. The `.config` folder is hidden; press ⇧⌘. (Shift-Command-period) in Finder to show hidden folders.
+
+**Windows.** In PowerShell, this opens the folder in File Explorer:
+
+```powershell
+explorer "$(spicetify path userdata)"
+```
+
+Or press **Win+R**, type `%APPDATA%\spicetify`, and press Enter.
+
+**Linux:**
 
 ```bash
-spicetify apply
+xdg-open "$(spicetify path userdata)"
 ```
 
-Windows (PowerShell):
+Usually `~/.config/spicetify`.
 
-```powershell
-Copy-Item nordlys-spaces.js "$(spicetify path userdata)\Extensions\"
-```
+If there is no `Extensions` or `Themes` folder inside, create it. The names are case-sensitive.
 
-```powershell
-spicetify config extensions nordlys-spaces.js
-```
+### 2. Get the files
 
-```powershell
-spicetify apply
-```
+Pick one:
 
-To remove one, add `-` after the file name and apply again:
+- **A. Spicetify Marketplace** (once released): open **Marketplace** in Spotify, search for **Nordlys**, click **Install**. That's all; skip the rest of this guide.
+- **B. A release download** (once released): from the [releases page](https://github.com/juan-alvarz/SpicetiGyn/releases), download `nordlys-spaces.js` and, for a theme, `NordlysCodex.zip` or `NordlysSpaces.zip`. Unzip the theme to get a folder.
+- **C. Build them yourself:** follow steps 1–2 of the [quick way](#quick-way-from-the-source-code), then run `pnpm build`. The files appear in the code folder:
+
+  ```
+  SpicetiGyn/dist/
+  ├─ extensions/nordlys-spaces.js
+  └─ themes/
+     ├─ NordlysCodex/      (user.css, color.ini)
+     └─ NordlysSpaces/     (user.css, color.ini)
+  ```
+
+You should end up with:
+
+| What                 | File or folder                                                      |
+| -------------------- | ------------------------------------------------------------------- |
+| Spaces extension     | `nordlys-spaces.js`                                                 |
+| Nordlys Codex theme  | the folder `NordlysCodex` (with `user.css` and `color.ini` inside)  |
+| Nordlys Spaces theme | the folder `NordlysSpaces` (with `user.css` and `color.ini` inside) |
+
+### 3. Install the Spaces extension
+
+1. Copy `nordlys-spaces.js` into the **`Extensions`** folder you opened in step 1. Drag and drop is fine.
+2. Tell Spicetify to load it:
+
+   ```bash
+   spicetify config extensions nordlys-spaces.js
+   ```
+
+3. Apply. Spotify restarts.
+
+   ```bash
+   spicetify apply
+   ```
+
+### 4. Install a theme (optional)
+
+1. Copy the **whole theme folder** (for example `NordlysCodex`) into the **`Themes`** folder. Keep the folder name exactly as it is; it's the theme's name.
+
+   ```
+   spicetify/Themes/NordlysCodex/user.css
+   spicetify/Themes/NordlysCodex/color.ini
+   ```
+
+2. Choose the theme and a color scheme:
+
+   ```bash
+   spicetify config current_theme NordlysCodex color_scheme Bone
+   ```
+
+3. Make sure theme colors and CSS are turned on (they usually already are):
+
+   ```bash
+   spicetify config inject_css 1 replace_colors 1
+   ```
+
+4. Apply:
+
+   ```bash
+   spicetify apply
+   ```
+
+| Theme                | Folder name     | Color schemes                             |
+| -------------------- | --------------- | ----------------------------------------- |
+| Nordlys Codex        | `NordlysCodex`  | `Bone`, `Frost`, `Lichen`                 |
+| Nordlys Spaces theme | `NordlysSpaces` | `FjordDusk`, `Lingonberry`, `MidnightSun` |
+
+To change the scheme later, run only `spicetify config color_scheme Frost`, then `spicetify apply`.
+
+---
+
+## Check that it worked
+
+- A **Spaces** button (four squares, or the current space's icon) appears in Spotify's top bar. Click it to open the panel.
+- **⌘⌥2** on macOS or **Ctrl+Alt+2** on Windows switches to your second space.
+- Right-click a playlist: **Add to space** is in the menu.
+- With a theme: the fonts and colors change.
+
+---
+
+## Updating
+
+Replace the files from step 3 or 4 with the new ones, then run `spicetify apply`. With the quick way, run `git pull`, then `pnpm dev install`, then `spicetify apply`.
+
+---
+
+## Removing everything
+
+**Spaces extension:**
 
 ```bash
 spicetify config extensions nordlys-spaces.js-
@@ -57,41 +216,21 @@ spicetify config extensions nordlys-spaces.js-
 spicetify apply
 ```
 
-## Themes
+Then you can delete `nordlys-spaces.js` from the `Extensions` folder. Your spaces stay saved inside Spotify, in case you reinstall.
 
-Download the theme's `.zip` (for example `NordlysCodex.zip`) from the [releases page](https://github.com/juan-alvarz/SpicetiGyn/releases). It contains one folder with `user.css` and `color.ini`.
+**A theme:** switch to another theme with `spicetify config current_theme <OtherTheme>`, run `spicetify apply`, and then delete the theme's folder from `Themes`.
 
-macOS and Linux:
+**The tools (quick way only):** run `corepack disable`, then delete the `SpicetiGyn` folder.
 
-```bash
-unzip NordlysCodex.zip -d "$(spicetify path userdata)/Themes/"
-```
+---
 
-```bash
-spicetify config current_theme NordlysCodex color_scheme Bone
-```
+## Troubleshooting
 
-```bash
-spicetify apply
-```
-
-Windows (PowerShell):
-
-```powershell
-Expand-Archive NordlysCodex.zip -DestinationPath "$(spicetify path userdata)\Themes\"
-```
-
-```powershell
-spicetify config current_theme NordlysCodex color_scheme Bone
-```
-
-```powershell
-spicetify apply
-```
-
-| Theme                | Folder          | Schemes                                   |
-| -------------------- | --------------- | ----------------------------------------- |
-| Nordlys Codex        | `NordlysCodex`  | `Bone`, `Frost`, `Lichen`                 |
-| Nordlys Spaces theme | `NordlysSpaces` | `FjordDusk`, `Lingonberry`, `MidnightSun` |
-
-If colors don't change, make sure color injection is on: `spicetify config inject_css 1 replace_colors 1`, then `spicetify apply`.
+| Problem                                   | Fix                                                                                                                                                                                                                       |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spicetify: command not found`            | Spicetify isn't installed, or the terminal can't find it. Reinstall it, then open a new terminal window.                                                                                                                  |
+| `spicetify path userdata` prints an error | Use the usual folder: `~/.config/spicetify` on macOS and Linux, `%APPDATA%\spicetify` on Windows.                                                                                                                         |
+| No Spaces button after `apply`            | Run `spicetify config extensions` and check that `nordlys-spaces.js` is in the list. Then check that the file is in `Extensions` (not in a subfolder) and run `spicetify apply` again.                                    |
+| The theme doesn't change anything         | Check that the folder is `Themes/NordlysCodex/user.css` (not `Themes/NordlysCodex/NordlysCodex/…`), and run the `inject_css` command in step 4.                                                                           |
+| Spotify updated and everything is gone    | That's normal after a Spotify update. Run `spicetify backup apply`.                                                                                                                                                       |
+| Something else is wrong                   | Run `spicetify enable-devtools`, open Spotify's console (right-click → Inspect, or ⌥⌘I / Ctrl+Shift+I), run `localStorage.setItem("nordlys:debug","1")`, restart Spotify, and look for lines that start with `[nordlys:`. |

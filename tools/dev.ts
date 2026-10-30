@@ -2,6 +2,7 @@
  * Developer loop for macOS, Windows and Linux.
  *
  *   pnpm dev path                     print the Spicetify userdata folder
+ *   pnpm dev open [dist]              open the userdata folder (or dist/) in Finder / Explorer
  *   pnpm dev install [name…] [--link] build, then copy (or link) into Extensions/ and Themes/
  *   pnpm dev watch [name…]            rebuild on change and copy into userdata each time
  *   pnpm dev enable <name> [scheme]   extension: spicetify config extensions <file>; theme: current_theme
@@ -128,6 +129,18 @@ async function main() {
       break;
     }
 
+    case "open": {
+      const folder = names[0] === "dist" ? DIST : userdata();
+      await mkdir(folder, { recursive: true });
+      console.log(folder);
+      const opener = isWindows ? "explorer" : process.platform === "darwin" ? "open" : "xdg-open";
+      // Explorer exits with 1 even when it opens the folder, so only a failed spawn counts.
+      const result = spawnSync(opener, [folder], { stdio: "ignore" });
+      if (result.error)
+        console.log(`Couldn't open a file browser; open the folder above yourself.`);
+      break;
+    }
+
     case "install": {
       const pkgs = await select(names);
       await build({ only: pkgs.map((p) => p.slug) });
@@ -187,6 +200,7 @@ async function main() {
     default:
       console.log(`Usage:
   pnpm dev path
+  pnpm dev open [dist]
   pnpm dev install [name…] [--link]
   pnpm dev watch [name…]
   pnpm dev enable <name> [scheme] [--no-apply]
