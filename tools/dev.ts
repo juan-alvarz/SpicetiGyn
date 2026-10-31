@@ -215,8 +215,9 @@ async function main() {
         ]);
         spicetify(["config", "inject_css", "1", "replace_colors", "1"]);
       } else {
-        // An empty current_theme ("-" clears it) means stock Spotify.
-        spicetify(["config", "current_theme", "-"]);
+        // An empty current_theme means stock Spotify. Spicetify clears a value ending in "-",
+        // but parses a bare "-" as a flag unless "--" comes first.
+        spicetify(["--", "config", "current_theme", "-"]);
       }
       applyUnless(flags);
       break;
