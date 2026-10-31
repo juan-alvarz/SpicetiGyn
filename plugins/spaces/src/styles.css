@@ -36,8 +36,9 @@
   padding: 12px;
 }
 
-.nl-spaces-panel button,
-.nl-spaces-panel input {
+/* :where() keeps this reset weaker than each button's own colors (selected icon, primary
+   button, active space); otherwise they all inherit the panel's text color. */
+.nl-spaces-panel :where(button, input) {
   font: inherit;
   color: inherit;
 }

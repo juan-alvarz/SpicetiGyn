@@ -224,3 +224,25 @@ test("a fresh install has one space named Spotify", async ({ page }) => {
   await expect(dock.locator(".nl-dock-btn[data-space]")).toHaveText(["Spotify"]);
   await expect(page.locator("html")).toHaveAttribute("data-nl-space", "spotify");
 });
+
+test("settings stay open while you change them, and the selected icon is readable", async ({
+  page,
+}) => {
+  await load(page);
+  await page.getByRole("button", { name: "Spaces: Focus" }).click();
+  const panel = page.getByRole("dialog", { name: "Spaces" });
+  await panel.getByText("Settings").click();
+  await panel.getByText("Tint the window").click();
+  await expect(page.locator("html")).toHaveAttribute("data-nl-tint", "");
+  await expect(panel.locator(".nl-spaces-settings")).toHaveAttribute("open", "");
+  await panel.getByText("Music keeps playing").click();
+  await expect(panel.locator(".nl-spaces-settings")).toHaveAttribute("open", "");
+
+  await panel.getByRole("button", { name: "Edit Focus" }).click();
+  const active = panel.locator(".nl-icon-choice--active");
+  const colors = await active.evaluate((el) => {
+    const s = getComputedStyle(el);
+    return [s.color, s.backgroundColor];
+  });
+  expect(colors[0]).not.toBe(colors[1]);
+});

@@ -80,6 +80,8 @@ export function createPanel(deps: {
   let popover: PopoverHandle | null = null;
   let anchor: HTMLElement | null = null;
   let view: View = { kind: "main" };
+  // Changing a setting redraws the panel; remember that Settings was open.
+  let settingsOpen = false;
 
   const go = (next: View) => {
     view = next;
@@ -338,7 +340,15 @@ export function createPanel(deps: {
     const seconds = Math.round(settings.crossfadeMs / 1000);
     return h(
       "details",
-      { class: "nl-spaces-settings" },
+      {
+        class: "nl-spaces-settings",
+        attrs: { open: settingsOpen },
+        on: {
+          toggle: (event) => {
+            settingsOpen = (event.currentTarget as HTMLDetailsElement).open;
+          },
+        },
+      },
       h("summary", null, "Settings"),
       h(
         "fieldset",
