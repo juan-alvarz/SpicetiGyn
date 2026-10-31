@@ -1,0 +1,19 @@
+{
+  "name": "@nordlys/test-bus-client",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Test-only plugin that drives Spaces over the bus, standing in for a future Focus timer.",
+  "type": "module",
+  "dependencies": {
+    "@nordlys/core": "*"
+  },
+  "devDependencies": {
+    "@nordlys/spaces": "*"
+  },
+  "nordlys": {
+    "type": "test-extension",
+    "name": "Bus client (test)",
+    "entry": "src/entry.ts",
+    "outfile": "bus-client.js"
+  }
+}

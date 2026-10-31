@@ -1,0 +1,40 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      # With pending changesets: opens or updates a "Version packages" PR.
+      # Without: runs `npm run release`, which tags, creates GitHub Releases with the built
+      # files attached, and updates the `dist` branch the Marketplace reads.
+      - uses: changesets/action@v1
+        with:
+          version: npm run version
+          publish: npm run release
+          title: Version packages
+          commit: Version packages
+          createGithubReleases: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

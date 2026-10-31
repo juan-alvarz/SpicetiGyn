@@ -1,0 +1,86 @@
+/*
+ * Nordlys theme kit: the platform rules from the design studies ("Both systems"),
+ * shared by every Nordlys theme. Bundled into each theme's user.css at build time.
+ *
+ * What it deliberately does NOT do:
+ *   - touch -webkit-app-region (themes that rebuild the drag area can leave the window
+ *     impossible to move on macOS; tools/check-boundaries.ts fails the build if any theme does)
+ *   - move or pad the top bar (macOS draws the traffic lights at its left end and Windows
+ *     its caption buttons at its right end; Spotify already reserves both)
+ *   - rely on system fonts (SF Pro is macOS-only, Segoe UI is Windows-only): themes @import
+ *     their fonts and end every stack in a generic family
+ *
+ * Selectors: Spicetify rewrites Spotify's hashed class names to readable ones (.main-*,
+ * .Root__*), which are the most stable hooks themes have. They can still change when Spotify
+ * updates, so each theme keeps its selector use small.
+ */
+
+/* Spotify's own color tokens, pointed at the Spicetify scheme (color.ini). */
+.encore-dark-theme,
+.encore-dark-theme .encore-base-set,
+.encore-dark-theme .encore-inverted-light-set ~ .encore-base-set {
+  --background-base: var(--spice-main);
+  --background-highlight: var(--spice-highlight);
+  --background-press: var(--spice-highlight-elevated);
+  --background-elevated-base: var(--spice-main-elevated);
+  --background-elevated-highlight: var(--spice-highlight-elevated);
+  --background-elevated-press: var(--spice-highlight-elevated);
+  --background-tinted-base: rgba(var(--spice-rgb-text), 0.08);
+  --background-tinted-highlight: rgba(var(--spice-rgb-text), 0.12);
+  --background-tinted-press: rgba(var(--spice-rgb-text), 0.16);
+  --text-base: var(--spice-text);
+  --text-subdued: var(--spice-subtext);
+  --text-bright-accent: var(--spice-button);
+  --essential-base: var(--spice-text);
+  --essential-subdued: var(--spice-subtext);
+  --essential-bright-accent: var(--spice-button);
+  --decorative-base: var(--spice-text);
+  --decorative-subdued: rgba(var(--spice-rgb-text), 0.15);
+}
+
+/* Scrollbars: Windows shows classic, always-visible ones; macOS usually hides them.
+   Explicit rules make both look the same. Spotify also uses OverlayScrollbars (.os-*). */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 6px;
+  background: rgba(var(--spice-rgb-text), 0.25) padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(var(--spice-rgb-text), 0.4);
+}
+
+.os-scrollbar-handle {
+  background: rgba(var(--spice-rgb-text), 0.25) !important;
+}
+
+.os-scrollbar-handle:hover,
+.os-scrollbar-handle.active {
+  background: rgba(var(--spice-rgb-text), 0.4) !important;
+}
+
+/* 125% and 150% display scaling on Windows: let long text shrink instead of clipping. */
+.main-trackList-rowTitle,
+.main-trackList-rowSubTitle,
+.main-entityHeader-title {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

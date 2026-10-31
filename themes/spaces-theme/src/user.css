@@ -1,0 +1,229 @@
+/*
+ * Nordlys Spaces — "Spotify as a browser-style workspace".
+ * The window is a grainy gradient; the library, top bar, player and right sidebar sit
+ * straight on it, and only the main view is a card floating with a soft shadow.
+ *
+ * Works on its own (gradient from color.ini). With the Spaces extension installed it follows
+ * the current space through the documented styling contract (--nl-space-*), and fades
+ * between spaces. It never requires the extension.
+ *
+ * Selectors: each rule lists the hooks Spotify 1.3.x has (ids, data-testid, ARIA roles, the
+ * plain .Root class) first, then the .Root__* / .main-* names older Spotify versions had.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@400;500;600;700&display=swap");
+@import "@nordlys/theme-kit/base.css";
+
+/* Registered so the gradient can fade between spaces instead of jumping. */
+@property --sp-g0 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #0f1a2b;
+}
+
+@property --sp-g1 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #2a7d90;
+}
+
+@property --sp-g2 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #3d47a3;
+}
+
+@property --sp-g3 {
+  syntax: "<color>";
+  inherits: true;
+  initial-value: #164a5c;
+}
+
+:root {
+  --sp-font: "Familjen Grotesk", system-ui, sans-serif;
+  --sp-g0: var(--nl-space-base, var(--spice-g0));
+  --sp-g1: var(--nl-space-g1, var(--spice-g1));
+  --sp-g2: var(--nl-space-g2, var(--spice-g2));
+  --sp-g3: var(--nl-space-g3, var(--spice-g3));
+  /* The card color is captured here, before --spice-main is made transparent below. */
+  --sp-card: var(--spice-main);
+  --sp-sidebar: var(--spice-sidebar);
+  --sp-player: var(--spice-player);
+  --sp-elevated: var(--spice-main-elevated);
+  --sp-elevated-highlight: var(--spice-highlight-elevated);
+  --sp-glass: rgba(255, 255, 255, 0.1);
+  --sp-glass-strong: rgba(255, 255, 255, 0.16);
+  --sp-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  transition:
+    --sp-g0 1.1s ease,
+    --sp-g1 1.1s ease,
+    --sp-g2 1.1s ease,
+    --sp-g3 1.1s ease;
+}
+
+/* With the Spaces extension, buttons and highlights take the space's accent. */
+html[data-nl-space] {
+  --spice-button: var(--nl-space-accent);
+  --spice-button-active: var(--nl-space-accent);
+  --spice-rgb-button: var(--nl-space-accent-rgb);
+}
+
+/* The theme paints the window itself, so the extension's optional tint isn't needed. */
+html[data-nl-tint] .nl-tint {
+  display: none;
+}
+
+/* Type */
+.encore-dark-theme,
+.encore-dark-theme .encore-base-set {
+  --encore-body-font-stack: var(--sp-font);
+  --encore-title-font-stack: var(--sp-font);
+  --encore-variable-font-stack: var(--sp-font);
+}
+
+body,
+body :where(button, input, textarea, h1, h2, h3, p, span, a):not([class*="spoticon"]) {
+  font-family: var(--sp-font) !important;
+}
+
+:is([data-testid="entityTitle"], .main-entityHeader-title) :is(h1, span) {
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+/* The window: grain over three glows over the base color. It goes on the layout root,
+   because the root paints over <body> once Spotify has loaded. The grain is an inline SVG,
+   so it stays sharp at any display scaling. */
+:is(body, #main, .Root, .Root__top-container) {
+  background-color: var(--sp-g0) !important;
+  background-image:
+    var(--sp-grain), radial-gradient(820px 640px at 0% 0%, var(--sp-g1), transparent 62%),
+    radial-gradient(760px 700px at 100% 12%, var(--sp-g2), transparent 62%),
+    radial-gradient(900px 560px at 45% 112%, var(--sp-g3), transparent 64%) !important;
+  background-attachment: fixed !important;
+}
+
+/* Everything except the main view sits straight on the gradient: Spotify's surface colors
+   become transparent inside the layout… */
+:is(.Root, .Root__top-container),
+:is(.Root, .Root__top-container) .encore-dark-theme {
+  --background-base: transparent;
+  --background-highlight: var(--sp-glass);
+  --background-press: var(--sp-glass-strong);
+  /* Pop-ups (search suggestions, menus) stay solid so they're readable over the window. */
+  --background-elevated-base: var(--sp-elevated);
+  --background-elevated-highlight: var(--sp-elevated-highlight);
+  --background-tinted-base: var(--sp-glass);
+  --background-tinted-highlight: var(--sp-glass-strong);
+  --spice-main: transparent;
+  --spice-sidebar: transparent;
+  --spice-player: transparent;
+}
+
+:is(.Root, .Root__top-container) > *,
+:is(
+  #global-nav-bar,
+  [data-testid="topbar"],
+  #Desktop_LeftSidebar_Id,
+  #Desktop_PanelContainer_Id,
+  [data-testid="now-playing-bar"],
+  .Root__globalNav,
+  .Root__nav-bar,
+  .Root__right-sidebar,
+  .Root__now-playing-bar
+) {
+  background-color: transparent !important;
+}
+
+/* …and the main view is the one floating card, back on the theme's card color. */
+/* Spotify uses these colors for foreground details too (the icon on a round play button, the
+   text on a selected chip), so the card gets every one of them back, not just its surface. */
+:is(.main-view-container, .Root__main-view),
+:is(.main-view-container, .Root__main-view) .encore-dark-theme {
+  --background-base: var(--sp-card);
+  --spice-main: var(--sp-card);
+  --spice-sidebar: var(--sp-sidebar);
+  --spice-player: var(--sp-player);
+}
+
+/* The same details outside the card: buttons, selected chips and pop-ups in the see-through
+   areas keep Spotify's original colors. */
+:is(.Root, .Root__top-container)
+  :is(
+    [data-encore-id="buttonPrimary"],
+    [data-encore-id="chip"],
+    [role="dialog"],
+    [role="listbox"],
+    [role="menu"]
+  ) {
+  --spice-main: var(--sp-card);
+  --spice-sidebar: var(--sp-sidebar);
+  --spice-player: var(--sp-player);
+}
+
+:is(.main-view-container, .Root__main-view) {
+  border-radius: 12px !important;
+  background-color: var(--sp-card) !important;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 20px 44px -18px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+}
+
+/* The player bar keeps a real color. Spotify also uses these colors in the foreground there
+   (the icon on the white play button, the fade on long song titles), and those disappear
+   when the color is transparent. The gradient's base color keeps it blending in. */
+:is([data-testid="now-playing-bar"], .Root__now-playing-bar),
+:is([data-testid="now-playing-bar"], .Root__now-playing-bar) .encore-dark-theme {
+  --background-base: var(--sp-g0);
+  --spice-main: var(--sp-g0);
+  --spice-player: var(--sp-g0);
+  --spice-sidebar: var(--sp-g0);
+}
+
+/* The header glow inside the card picks up the first glow color. */
+.main-entityHeader-backgroundColor {
+  background: radial-gradient(
+    680px 260px at 18% 0%,
+    color-mix(in srgb, var(--sp-g1) 30%, transparent),
+    transparent 70%
+  ) !important;
+}
+
+:is(.main-entityHeader-overlay, .main-actionBarBackground-background) {
+  background: none !important;
+}
+
+/* Search reads like a command bar. */
+:is(#global-nav-bar, .Root__globalNav)
+  :is(input[type="search"], [data-testid="search-input"], [role="combobox"]) {
+  border-radius: 10px !important;
+}
+
+/* Library rows as soft pills. */
+:is(#Desktop_LeftSidebar_Id, .Root__nav-bar)
+  :is([data-encore-id="listRow"], .main-yourLibraryX-listItem > div) {
+  border-radius: 9px;
+}
+
+/* Track rows */
+:is([role="row"], .main-trackList-trackListRow) {
+  border-radius: 9px;
+}
+
+:is([role="row"], .main-trackList-trackListRow):is(
+  [aria-selected="true"],
+  .main-trackList-selected
+) {
+  background: color-mix(in srgb, var(--spice-button) 15%, transparent) !important;
+}
+
+/* Cover art gets a little depth. */
+:is(
+    [data-testid="playlist-image"],
+    [data-testid="cover-art-container"],
+    .main-entityHeader-imageContainer
+  )
+  img {
+  border-radius: 10px;
+  box-shadow: 0 16px 30px -12px rgba(0, 0, 0, 0.75);
+}

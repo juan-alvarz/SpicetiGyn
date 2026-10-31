@@ -1,0 +1,636 @@
+/*
+ * Spaces UI. Colors come from Spicetify's standard variables (--spice-*), which exist with
+ * stock Spotify and with every Marketplace theme, so the panel fits whatever is installed.
+ * The font is inherited from Spotify, which ships its own font on macOS and Windows.
+ * Stable class names for themes are listed in docs/styling-contract.md.
+ */
+
+.nl-popover {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 24px));
+  overflow: hidden auto;
+  border-radius: 12px;
+  background: var(--spice-main-elevated, var(--spice-card, #242424));
+  color: var(--spice-text, #fff);
+  box-shadow:
+    0 0 0 1px rgba(var(--spice-rgb-text, 255, 255, 255), 0.1),
+    0 16px 40px -12px rgba(0, 0, 0, 0.7);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  overscroll-behavior: contain;
+}
+
+.nl-popover *,
+.nl-popover *::before,
+.nl-popover *::after {
+  box-sizing: border-box;
+}
+
+.nl-spaces-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px;
+}
+
+/* :where() keeps this reset weaker than each button's own colors (selected icon, primary
+   button, active space); otherwise they all inherit the panel's text color. */
+.nl-spaces-panel :where(button, input) {
+  font: inherit;
+  color: inherit;
+}
+
+/* switcher */
+.nl-spaces-switcher {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.nl-space-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px 4px 6px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nl-space-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.nl-space-btn:hover {
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+  color: var(--spice-text, #fff);
+}
+
+.nl-space-btn--active,
+.nl-space-btn--active:hover {
+  background: var(--nl-btn-accent, var(--spice-button, #1db954));
+  color: #111;
+}
+
+.nl-space-btn__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* headings */
+.nl-spaces-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nl-spaces-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.nl-spaces-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 16px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nl-spaces-subtitle {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 6px;
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nl-kbd {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+  color: var(--spice-subtext, #b3b3b3);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.nl-spaces-current {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nl-spaces-empty {
+  margin: 0;
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12.5px;
+}
+
+/* lists */
+.nl-spaces-panel ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nl-spaces-items {
+  max-height: min(320px, 40vh);
+  overflow-y: auto;
+}
+
+.nl-spaces-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+.nl-spaces-item:hover {
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.07);
+}
+
+.nl-spaces-item__open,
+.nl-spaces-other {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: start;
+  cursor: pointer;
+}
+
+.nl-spaces-other:hover {
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.07);
+}
+
+.nl-spaces-item__art {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.nl-spaces-item__art--empty {
+  display: grid;
+  place-items: center;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+  color: var(--spice-subtext, #b3b3b3);
+  font-weight: 700;
+}
+
+.nl-spaces-item__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.nl-spaces-item__name,
+.nl-spaces-item__kind {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nl-spaces-item__kind {
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12px;
+}
+
+.nl-spaces-other__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  color: #111;
+}
+
+.nl-spaces-other__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.nl-spaces-others {
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.05);
+}
+
+/* buttons */
+.nl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nl-btn:hover:not(:disabled) {
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.16);
+}
+
+.nl-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.nl-btn--wide {
+  width: 100%;
+}
+
+.nl-btn--primary,
+.nl-btn--primary:hover:not(:disabled) {
+  background: var(--spice-text, #fff);
+  color: var(--spice-main, #121212);
+}
+
+.nl-btn--danger {
+  background: transparent;
+  color: #ff8a80;
+}
+
+.nl-btn--danger:hover:not(:disabled) {
+  background: rgba(255, 120, 110, 0.14);
+}
+
+.nl-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.nl-icon-btn {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--spice-subtext, #b3b3b3);
+  cursor: pointer;
+}
+
+.nl-icon-btn:hover {
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+  color: var(--spice-text, #fff);
+}
+
+.nl-popover button:focus-visible,
+.nl-popover input:focus-visible,
+.nl-popover summary:focus-visible {
+  outline: 2px solid var(--spice-text, #fff);
+  outline-offset: 2px;
+}
+
+/* editor */
+.nl-spaces-editor,
+.nl-spaces-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nl-field > span {
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nl-field input {
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+  box-shadow: inset 0 0 0 1px rgba(var(--spice-rgb-text, 255, 255, 255), 0.14);
+}
+
+.nl-swatches,
+.nl-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nl-swatch {
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+}
+
+.nl-swatch--active {
+  box-shadow:
+    0 0 0 2px var(--spice-main-elevated, var(--spice-card, #242424)),
+    0 0 0 4px var(--spice-text, #fff);
+}
+
+.nl-icon-choice {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--spice-subtext, #b3b3b3);
+  cursor: pointer;
+}
+
+.nl-icon-choice svg {
+  width: 18px;
+  height: 18px;
+}
+
+.nl-icon-choice:hover {
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+}
+
+.nl-icon-choice--active,
+.nl-icon-choice--active:hover {
+  background: var(--spice-text, #fff);
+  color: var(--spice-main, #121212);
+}
+
+.nl-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.nl-row__spacer {
+  flex: 1;
+}
+
+/* settings */
+.nl-spaces-settings summary {
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nl-spaces-settings[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nl-spaces-settings fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.nl-spaces-settings legend {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.nl-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.nl-choice input {
+  flex: none;
+  margin: 2px 0 0;
+  accent-color: var(--nl-space-accent, var(--spice-button, #1db954));
+}
+
+.nl-choice small {
+  display: block;
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12px;
+}
+
+.nl-range {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.nl-range > span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.nl-range output {
+  color: var(--spice-subtext, #b3b3b3);
+}
+
+.nl-range input {
+  width: 100%;
+  accent-color: var(--nl-space-accent, var(--spice-button, #1db954));
+}
+
+/* Scrollbars: Windows shows classic scrollbars, macOS usually hides them. Style both the same. */
+.nl-scroll,
+.nl-popover {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(var(--spice-rgb-text, 255, 255, 255), 0.3) transparent;
+}
+
+.nl-scroll::-webkit-scrollbar,
+.nl-popover::-webkit-scrollbar {
+  width: 8px;
+}
+
+.nl-scroll::-webkit-scrollbar-thumb,
+.nl-popover::-webkit-scrollbar-thumb {
+  border-radius: 4px;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.3);
+}
+
+.nl-scroll::-webkit-scrollbar-track,
+.nl-popover::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Optional window tint. One layer, no Spotify class names, never takes clicks. */
+.nl-tint {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 60% at 0% 0%, var(--nl-space-g1, transparent), transparent 70%),
+    radial-gradient(60% 70% at 100% 10%, var(--nl-space-g2, transparent), transparent 70%),
+    radial-gradient(80% 50% at 50% 110%, var(--nl-space-g3, transparent), transparent 70%);
+  mix-blend-mode: soft-light;
+  opacity: 0.35;
+  transition: opacity 0.4s ease;
+}
+
+html[data-nl-switching] .nl-tint {
+  opacity: 0.15;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nl-tint {
+    transition: none;
+  }
+}
+
+/* Space switcher pinned to the bottom of the library sidebar (position comes from the core). */
+.nl-spaces-dock-wrap {
+  container-type: inline-size;
+}
+
+.nl-spaces-dock {
+  display: flex;
+  gap: 3px;
+  padding: 4px;
+  border-radius: 12px;
+  background: rgba(var(--spice-rgb-main, 18, 18, 18), 0.92);
+  box-shadow:
+    inset 0 0 0 1px rgba(var(--spice-rgb-text, 255, 255, 255), 0.08),
+    0 8px 20px -10px rgba(0, 0, 0, 0.6);
+  color: var(--spice-subtext, #b3b3b3);
+  font: inherit;
+}
+
+.nl-dock-btn {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 6px 2px 5px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.nl-dock-btn svg {
+  flex: none;
+  width: 17px;
+  height: 17px;
+}
+
+.nl-dock-btn:hover {
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.1);
+  color: var(--spice-text, #fff);
+}
+
+.nl-dock-btn--active,
+.nl-dock-btn--active:hover {
+  background: var(--nl-btn-accent, var(--spice-button, #1db954));
+  color: #111;
+  box-shadow: 0 3px 10px -3px rgba(0, 0, 0, 0.35);
+}
+
+.nl-dock-btn--new {
+  flex: 0 0 34px;
+  justify-content: center;
+}
+
+.nl-dock-btn:focus-visible {
+  outline: 2px solid var(--spice-text, #fff);
+  outline-offset: 2px;
+}
+
+.nl-dock-btn__name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A narrow (collapsed) sidebar: icons only, stacked. */
+@container (max-width: 200px) {
+  .nl-dock-btn__name {
+    display: none;
+  }
+}
+
+@container (max-width: 110px) {
+  .nl-spaces-dock {
+    flex-direction: column;
+  }
+
+  .nl-dock-btn--new {
+    flex-basis: auto;
+    padding: 6px 2px;
+  }
+}
+
+.nl-spaces-now {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(var(--spice-rgb-text, 255, 255, 255), 0.05);
+  color: var(--spice-subtext, #b3b3b3);
+  font-size: 12.5px;
+}
+
+.nl-spaces-now--playing {
+  color: var(--spice-text, #fff);
+  box-shadow: inset 3px 0 0 var(--nl-space-accent, var(--spice-button, #1db954));
+}
+
+.nl-spaces-others li {
+  display: flex;
+  align-items: center;
+}

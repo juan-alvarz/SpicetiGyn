@@ -1,0 +1,141 @@
+/*
+ * Nordlys Codex — "a terminal with a classical streak".
+ * One dark surface divided by hairlines, monospace type, a big italic serif for titles,
+ * square corners, and artwork reduced to grayscale.
+ *
+ * No blur and no transparency, so it renders the same on macOS and Windows.
+ * The two-tone dithered artwork from the design study needs an extension; this theme
+ * ships the CSS-only grayscale fallback.
+ *
+ * Selectors: each rule lists the hooks Spotify 1.3.x has (ids, data-testid, ARIA roles, the
+ * plain .Root class) first, then the .Root__* / .main-* names older Spotify versions had.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Fragment+Mono&family=Martian+Mono:wght@400;500&family=Cormorant+Garamond:ital,wght@1,500;1,600&display=swap");
+@import "@nordlys/theme-kit/base.css";
+
+:root {
+  --codex-mono: "Fragment Mono", ui-monospace, "Cascadia Mono", Menlo, Consolas, monospace;
+  --codex-label: "Martian Mono", ui-monospace, Menlo, Consolas, monospace;
+  --codex-serif: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --codex-line: rgba(var(--spice-rgb-text), 0.15);
+}
+
+/* Type: monospace everywhere, except Spotify's icon font. */
+.encore-dark-theme,
+.encore-dark-theme .encore-base-set {
+  --encore-body-font-stack: var(--codex-mono);
+  --encore-title-font-stack: var(--codex-mono);
+  --encore-variable-font-stack: var(--codex-mono);
+}
+
+body,
+body
+  :where(button, input, textarea, select, h1, h2, h3, h4, p, span, a, div):not(
+    [class*="spoticon"]
+  ) {
+  font-family: var(--codex-mono) !important;
+  letter-spacing: 0;
+}
+
+/* Titles: big italic serif. */
+:is([data-testid="entityTitle"], .main-entityHeader-title) :is(h1, span) {
+  font-family: var(--codex-serif) !important;
+  font-style: italic;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+/* Column headers and section labels: small caps mono. */
+:is([role="columnheader"], .main-trackList-trackListHeaderRow, .main-shelf-title) {
+  font-family: var(--codex-label) !important;
+  font-size: 10px !important;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--spice-subtext);
+}
+
+/* One surface, divided by hairlines instead of gaps and floating panels. */
+:is(.Root, .Root__top-container) {
+  --panel-gap: 0px;
+  background: var(--spice-main) !important;
+}
+
+:is(
+  #global-nav-bar,
+  #Desktop_LeftSidebar_Id,
+  #main-view,
+  .main-view-container,
+  #Desktop_PanelContainer_Id,
+  [data-testid="now-playing-bar"],
+  .Root__globalNav,
+  .Root__nav-bar,
+  .Root__main-view,
+  .Root__right-sidebar,
+  .Root__now-playing-bar
+) {
+  border-radius: 0 !important;
+  background-color: var(--spice-main) !important;
+}
+
+:is(#global-nav-bar, .Root__globalNav) {
+  border-bottom: 1px solid var(--codex-line);
+}
+
+:is(#Desktop_LeftSidebar_Id, .Root__nav-bar) {
+  border-right: 1px solid var(--codex-line);
+}
+
+:is(#Desktop_PanelContainer_Id, .Root__right-sidebar) {
+  border-left: 1px solid var(--codex-line);
+}
+
+:is([data-testid="now-playing-bar"], .Root__now-playing-bar) {
+  border-top: 1px solid var(--codex-line);
+}
+
+/* No colored gradients behind page headers. */
+:is(
+  [data-testid="entity-header"],
+  [data-testid="action-bar"],
+  .main-entityHeader-backgroundColor,
+  .main-entityHeader-overlay,
+  .main-actionBarBackground-background,
+  .main-home-homeHeader
+) {
+  background: none !important;
+  background-color: transparent !important;
+}
+
+/* Square corners everywhere inside Spotify's layout. Plugin UI (.nl-*) lives outside it. */
+:is(.Root, .Root__top-container) :where(*) {
+  border-radius: 0 !important;
+}
+
+/* Artwork in two tones of gray. */
+:is(.Root, .Root__top-container) :is(img[src*="scdn.co"], img[src*="spotifycdn.com"]) {
+  filter: grayscale(1) contrast(1.15);
+}
+
+/* Selected row is inverted; hovered rows get a faint wash. */
+:is([role="row"], .main-trackList-trackListRow):is(
+  [aria-selected="true"],
+  .main-trackList-selected
+) {
+  background: var(--spice-text) !important;
+  color: var(--spice-main) !important;
+}
+
+:is([role="row"], .main-trackList-trackListRow):is([aria-selected="true"], .main-trackList-selected)
+  * {
+  color: var(--spice-main) !important;
+}
+
+:is([role="row"], .main-trackList-trackListRow):hover {
+  background: rgba(var(--spice-rgb-text), 0.06) !important;
+}
+
+/* Buttons as flat blocks, not glowing pills. */
+:is([data-encore-id="buttonPrimary"], .main-playButton-PlayButton button) {
+  box-shadow: none !important;
+}

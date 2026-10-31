@@ -1,0 +1,34 @@
+[
+  {
+    "name": "Nordlys Spaces",
+    "description": "Arc-style spaces for Spotify. Each space keeps its own playlists, albums and artists, colors, last page and what it was playing. Works with any theme.",
+    "preview": "spaces/preview.png",
+    "readme": "spaces/README.md",
+    "branch": "dist",
+    "authors": [{ "name": "juan-alvarz", "url": "https://github.com/juan-alvarz" }],
+    "main": "spaces/nordlys-spaces.js",
+    "tags": ["nordlys", "productivity"]
+  },
+  {
+    "name": "Nordlys Codex",
+    "description": "A terminal with a classical streak: monospace type, hairlines instead of panels, a big italic serif for titles and grayscale artwork. Bone, Frost and Lichen palettes.",
+    "preview": "NordlysCodex/preview.png",
+    "readme": "NordlysCodex/README.md",
+    "branch": "dist",
+    "authors": [{ "name": "juan-alvarz", "url": "https://github.com/juan-alvarz" }],
+    "usercss": "NordlysCodex/user.css",
+    "schemes": "NordlysCodex/color.ini",
+    "tags": ["nordlys", "dark"]
+  },
+  {
+    "name": "Nordlys Spaces theme",
+    "description": "Spotify as a browser-style workspace: a grainy gradient window with the main view floating on it as a card. Follows your space's colors when the Spaces extension is installed.",
+    "preview": "NordlysSpaces/preview.png",
+    "readme": "NordlysSpaces/README.md",
+    "branch": "dist",
+    "authors": [{ "name": "juan-alvarz", "url": "https://github.com/juan-alvarz" }],
+    "usercss": "NordlysSpaces/user.css",
+    "schemes": "NordlysSpaces/color.ini",
+    "tags": ["nordlys", "dark"]
+  }
+]

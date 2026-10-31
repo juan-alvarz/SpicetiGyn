@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Nordlys mock harness</title>
+    <style>
+      /* Stock Spotify's dark colors as Spicetify exposes them, so plugin UI renders as it would without a theme. */
+      :root {
+        --spice-text: #ffffff;
+        --spice-subtext: #b3b3b3;
+        --spice-main: #121212;
+        --spice-main-elevated: #242424;
+        --spice-card: #282828;
+        --spice-button: #1ed760;
+        --spice-rgb-text: 255, 255, 255;
+        --spice-rgb-main: 18, 18, 18;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- The Playwright smoke test injects mock.js, then the built plugin bundles. -->
+  </body>
+</html>
