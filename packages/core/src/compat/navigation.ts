@@ -36,9 +36,10 @@ export function createNavigationAdapter(
   log: Logger,
   track: (dispose: () => void) => void,
 ): NavigationAdapter {
-  const history = s.Platform?.History;
+  // Read fresh each time; Spicetify rebuilds some of its objects after Spotify loads.
+  const history = () => s.Platform?.History;
   return {
-    currentPath: () => history?.location?.pathname ?? "/",
+    currentPath: () => history()?.location?.pathname ?? "/",
     pageTitle() {
       // The header title (data-testid is stable across 1.2.x and 1.3.x), then the main
       // landmark's label ("Spotify – Liked Songs").
@@ -49,21 +50,21 @@ export function createNavigationAdapter(
       return name && name !== label ? name : null;
     },
     go(path) {
-      if (typeof history?.push !== "function") {
+      if (typeof history()?.push !== "function") {
         log.warnOnce("nav.push", "Platform.History.push is missing; can't open pages.");
         return;
       }
-      if (history.location?.pathname !== path) history.push(path);
+      if (history()?.location?.pathname !== path) history()?.push?.(path);
     },
     onChange(fn) {
-      if (typeof history?.listen !== "function") {
+      if (typeof history()?.listen !== "function") {
         log.warnOnce(
           "nav.listen",
           "Platform.History.listen is missing; the last open page isn't remembered.",
         );
         return () => {};
       }
-      const unlisten = history.listen((location) => fn(location?.pathname ?? "/"));
+      const unlisten = history()?.listen?.((location) => fn(location?.pathname ?? "/"));
       const off = () => {
         if (typeof unlisten === "function") unlisten();
       };

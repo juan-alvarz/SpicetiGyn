@@ -27,6 +27,7 @@ export default defineConfig({
   define: {
     __NORDLYS_VERSION__: JSON.stringify("0.0.0-test"),
     __NORDLYS_CORE_VERSION__: JSON.stringify("0.0.0-test"),
+    __NORDLYS_BUILD__: JSON.stringify("test"),
   },
   test: {
     environment: "happy-dom",

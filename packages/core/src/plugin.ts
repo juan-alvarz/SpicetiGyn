@@ -240,7 +240,9 @@ export async function start(
     return null;
   }
 
-  log.info(`v${definition.version} started (core ${__NORDLYS_CORE_VERSION__}, ${platform.os}).`);
+  log.info(
+    `v${definition.version} started (core ${__NORDLYS_CORE_VERSION__}, build ${__NORDLYS_BUILD__}, ${platform.os}).`,
+  );
   host.bus.emit("nordlys:plugin-ready", { id: definition.id, version: definition.version });
   return { id: definition.id, version: definition.version, stop };
 }

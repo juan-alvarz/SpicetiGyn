@@ -83,6 +83,11 @@ export interface MockControls {
   bindings(): string[];
   /** The right-click menu as it would show for these URIs. */
   contextMenu(uris: string[]): MenuView[];
+  /**
+   * Does what Spicetify does once Spotify's code has loaded: replaces Spicetify.Player with a
+   * new object ({ ...Player, get origin() }). Only the new object gets `data` afterwards.
+   */
+  rebindPlayer(): void;
   /** Simulates the user opening a page. */
   navigate(path: string): void;
   topbarButtons(): HTMLElement[];
@@ -205,9 +210,10 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     emit("onplaypause");
   };
 
+  const stalePlayers = new WeakSet<object>();
   const Player: Record<string, unknown> = {
     get data() {
-      if (!player.trackUri || !o.playerEvents) return null;
+      if (!player.trackUri || !o.playerEvents || stalePlayers.has(this)) return null;
       const item = { uri: player.trackUri, name: trackName(player.trackUri) };
       return o.playerDataShape === "track"
         ? { track: item, context_uri: player.contextUri, is_paused: player.paused }
@@ -558,6 +564,15 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     bindings: () => [...bindings.keys()],
     contextMenu: (uris) =>
       [...menu].filter((e) => e.shouldAdd?.(uris) ?? true).map((e) => view(e, uris)),
+    rebindPlayer() {
+      const old = Spicetify.Player as Record<string, unknown>;
+      stalePlayers.add(old);
+      const fresh = Object.defineProperties({}, Object.getOwnPropertyDescriptors(Player)) as Record<
+        string,
+        unknown
+      >;
+      Spicetify.Player = fresh;
+    },
     navigate: (path) => History.push(path),
     // Visible buttons only: a removed Topbar.Button may be re-attached, hidden.
     topbarButtons: () =>

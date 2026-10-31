@@ -8,6 +8,8 @@
  *
  * Usage: tsx tools/build.ts [--with-test-assets] [--watch] [name ...]
  */
+
+import { execFileSync } from "node:child_process";
 import { copyFile, mkdir, readdir, readFile, rm } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -60,6 +62,24 @@ export async function listPackages(): Promise<Pkg[]> {
   return result;
 }
 
+/** "<commit>[+changes] <date>", so a log line tells which build is running. */
+function buildId(): string {
+  const git = (args: string[]) => {
+    try {
+      return execFileSync("git", args, {
+        cwd: ROOT,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim();
+    } catch {
+      return "";
+    }
+  };
+  const commit = git(["rev-parse", "--short", "HEAD"]) || "unknown";
+  const dirty = git(["status", "--porcelain"]) ? "+changes" : "";
+  return `${commit}${dirty} ${new Date().toISOString().slice(0, 16).replace("T", " ")}`;
+}
+
 async function coreVersion(): Promise<string> {
   const json = JSON.parse(await readFile(path.join(ROOT, "packages/core/package.json"), "utf8"));
   return json.version;
@@ -103,6 +123,7 @@ function scriptOptions(
     define: {
       __NORDLYS_VERSION__: JSON.stringify(pkg.version),
       __NORDLYS_CORE_VERSION__: JSON.stringify(core),
+      __NORDLYS_BUILD__: JSON.stringify(buildId()),
     },
     banner: { js: `// ${label} v${pkg.version} (core ${core}) · ${REPO_URL}` },
     logLevel: "warning",

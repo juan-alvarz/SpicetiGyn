@@ -39,7 +39,10 @@ export function createPlayerAdapter(
   log: Logger,
   track: (dispose: () => void) => void,
 ): PlayerAdapter {
-  const player = s.Player;
+  // Read Spicetify.Player fresh every time: once Spotify's code has loaded, Spicetify replaces
+  // the Player object with a new one ({ ...Player, get origin() }), and only the new one gets
+  // `data`. Holding on to the first object means reading an empty player forever.
+  const player = () => s.Player;
 
   /**
    * Spicetify's getProgress() and isPlaying() read Player.origin._state, which doesn't exist
@@ -58,7 +61,7 @@ export function createPlayerAdapter(
    * (seen on Spotify 1.3.x), fall back to PlayerAPI's own state, which other extensions use.
    */
   const playerData = (): PlayerDataLike | null => {
-    const fromPlayer = player?.data ?? null;
+    const fromPlayer = player()?.data ?? null;
     if (fromPlayer?.item || fromPlayer?.track) return fromPlayer;
     const api = s.Platform?.PlayerAPI;
     const fromApi = safely<unknown>(() => api?._state ?? api?.getState?.(), null);
@@ -91,7 +94,7 @@ export function createPlayerAdapter(
 
   /** Player.getProgress(), or the same sum Spicetify does, from the state's own timestamps. */
   const progress = (data: PlayerDataLike, paused: boolean): number => {
-    const fromPlayer = safely<number | null>(() => player?.getProgress?.(), null);
+    const fromPlayer = safely<number | null>(() => player()?.getProgress?.(), null);
     if (typeof fromPlayer === "number" && Number.isFinite(fromPlayer)) return fromPlayer;
     const base = data.positionAsOfTimestamp;
     if (typeof base !== "number") return 0;
@@ -104,7 +107,7 @@ export function createPlayerAdapter(
       return { contextUri: null, trackUri: null, trackName: null, positionMs: 0, isPaused: true };
     }
     const item = currentItem(data);
-    const paused = data.isPaused ?? data.is_paused ?? !safely(() => player?.isPlaying?.(), false);
+    const paused = data.isPaused ?? data.is_paused ?? !safely(() => player()?.isPlaying?.(), false);
     return {
       contextUri: data.context?.uri ?? data.context_uri ?? null,
       trackUri: item?.uri ?? null,
@@ -116,8 +119,8 @@ export function createPlayerAdapter(
 
   const listen = (type: string, fn: (state: PlayerState) => void) => {
     const handler = () => fn(getState());
-    player?.addEventListener?.(type, handler);
-    const off = () => player?.removeEventListener?.(type, handler);
+    player()?.addEventListener?.(type, handler);
+    const off = () => player()?.removeEventListener?.(type, handler);
     track(off);
     return off;
   };
@@ -135,10 +138,10 @@ export function createPlayerAdapter(
     const timer = setTimeout(() => finish(false), SONG_CHANGE_TIMEOUT_MS);
     function finish(ok: boolean) {
       clearTimeout(timer);
-      player?.removeEventListener?.("songchange", handler);
+      player()?.removeEventListener?.("songchange", handler);
       done(ok);
     }
-    player?.addEventListener?.("songchange", handler);
+    player()?.addEventListener?.("songchange", handler);
     return {
       promise,
       checkNow: () => {
@@ -161,9 +164,9 @@ export function createPlayerAdapter(
     } else {
       log.warnOnce("player.playerApi", "Platform.PlayerAPI.play is missing; using Player.playUri.");
     }
-    if (typeof player?.playUri === "function") {
+    if (typeof player()?.playUri === "function") {
       try {
-        await player.playUri(target.contextUri, {}, options);
+        await player()?.playUri?.(target.contextUri, {}, options);
         return true;
       } catch (error) {
         log.error("Player.playUri failed", error);
@@ -187,7 +190,7 @@ export function createPlayerAdapter(
       const ok = await loaded.promise;
       if (!ok) log.debug("No matching songchange after play; seeking anyway.");
       if (target.positionMs && target.positionMs > 0) {
-        if (typeof player?.seek === "function") player.seek(target.positionMs);
+        if (typeof player()?.seek === "function") player()?.seek?.(target.positionMs);
         else
           log.warnOnce(
             "player.seek",
@@ -201,29 +204,29 @@ export function createPlayerAdapter(
       const playerApi = s.Platform?.PlayerAPI;
       try {
         if (typeof playerApi?.pause === "function") await playerApi.pause();
-        else player?.pause?.();
+        else player()?.pause?.();
       } catch (error) {
         log.warn("Pause failed", error);
       }
     },
 
-    getVolume: () => clamp01(player?.getVolume?.() ?? 1),
+    getVolume: () => clamp01(player()?.getVolume?.() ?? 1),
 
     async setVolume(volume) {
-      if (typeof player?.setVolume !== "function") {
+      if (typeof player()?.setVolume !== "function") {
         log.warnOnce("player.volume", "Player.setVolume is missing; crossfade is disabled.");
         return;
       }
-      player.setVolume(clamp01(volume));
+      player()?.setVolume?.(clamp01(volume));
     },
 
     async fadeVolume(to, durationMs, signal) {
-      if (typeof player?.setVolume !== "function" || durationMs <= 0) return;
-      const from = clamp01(player.getVolume?.() ?? 1);
+      if (typeof player()?.setVolume !== "function" || durationMs <= 0) return;
+      const from = clamp01(player()?.getVolume?.() ?? 1);
       const steps = Math.max(1, Math.round(durationMs / FADE_STEP_MS));
       for (let i = 1; i <= steps; i++) {
         if (signal?.aborted) return;
-        player.setVolume(clamp01(from + ((to - from) * i) / steps));
+        player()?.setVolume?.(clamp01(from + ((to - from) * i) / steps));
         await sleep(durationMs / steps);
       }
     },

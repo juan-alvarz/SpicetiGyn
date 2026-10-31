@@ -71,6 +71,18 @@ describe("Spaces plugin", () => {
     );
   });
 
+  it("keeps reading the player after Spicetify replaces Spicetify.Player", async () => {
+    // Without PlayerAPI, so its state can't stand in for the replaced Player's data.
+    const { controls, saved } = await boot({ playerApi: false });
+    controls.rebindPlayer();
+    controls.load("spotify:playlist:deepwork", "spotify:track:index", { positionMs: 12_000 });
+    await waitFor(() => saved().spaces[0].snapshot?.trackUri === "spotify:track:index");
+    document.querySelector<HTMLButtonElement>('.nl-dock-btn[data-space="focus"]')?.click();
+    expect(document.querySelector(".nl-spaces-now")?.textContent).toBe(
+      "Playing in Focus: Northern Index",
+    );
+  });
+
   it("records songs even when Spotify sends no player events (Spotify 1.3.x)", async () => {
     const { controls, saved } = await boot({ playerEvents: false });
     controls.load("spotify:playlist:deepwork", "spotify:track:machinery", { positionMs: 30_000 });
