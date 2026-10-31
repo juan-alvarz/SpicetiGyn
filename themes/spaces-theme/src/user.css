@@ -145,6 +145,17 @@ body :where(button, input, textarea, h1, h2, h3, p, span, a):not([class*="spotic
   overflow: hidden;
 }
 
+/* The player bar keeps a real color. Spotify also uses these colors in the foreground there
+   (the icon on the white play button, the fade on long song titles), and those disappear
+   when the color is transparent. The gradient's base color keeps it blending in. */
+:is([data-testid="now-playing-bar"], .Root__now-playing-bar),
+:is([data-testid="now-playing-bar"], .Root__now-playing-bar) .encore-dark-theme {
+  --background-base: var(--sp-g0);
+  --spice-main: var(--sp-g0);
+  --spice-player: var(--sp-g0);
+  --spice-sidebar: var(--sp-g0);
+}
+
 /* The header glow inside the card picks up the first glow color. */
 .main-entityHeader-backgroundColor {
   background: radial-gradient(

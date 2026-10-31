@@ -98,6 +98,24 @@ describe("Spaces plugin", () => {
     );
   });
 
+  it("adopts music that was already playing when Spaces started", async () => {
+    const storage = new Map<string, string>([[KEY, JSON.stringify({ v: 1, data: twoSpaces() })]]);
+    const mock = createSpicetifyMock({ storage });
+    mock.controls.load("spotify:playlist:deepwork", "spotify:track:index", { positionMs: 9_000 });
+    vi.spyOn(console, "info").mockImplementation(() => {});
+    running = await start(spaces, { spicetify: mock.Spicetify, global: {} });
+    const saved = JSON.parse(storage.get(KEY) ?? "null").data;
+    expect(saved.playedIn).toBe("focus");
+    expect(saved.spaces[0].snapshot).toMatchObject({
+      trackUri: "spotify:track:index",
+      positionMs: 9_000,
+    });
+    document.querySelector<HTMLButtonElement>('.nl-dock-btn[data-space="focus"]')?.click();
+    expect(document.querySelector(".nl-spaces-now")?.textContent).toBe(
+      "Playing in Focus: Northern Index",
+    );
+  });
+
   it("names an added page after its title when the lookup finds nothing", async () => {
     const { saved, controls } = await boot();
     const title = document.createElement("div");

@@ -202,6 +202,7 @@ export default definePlugin({
       icon: UI_ICONS.spaces,
       onClick(anchor) {
         refreshMissingInfo();
+        syncPlayback();
         panel.toggle(anchor);
       },
     });
@@ -217,6 +218,7 @@ export default definePlugin({
       switchTo: (id) => void switchTo(id),
       openPanel(anchor, start) {
         refreshMissingInfo();
+        syncPlayback();
         if (start) panel.open(anchor, start);
         else panel.toggle(anchor);
       },
@@ -272,11 +274,26 @@ export default definePlugin({
     };
     ctx.player.onSongChange(onPlayback);
     ctx.player.onPlayPause(onPlayback);
-    const timer = setInterval(() => {
+
+    // Music that no space owns yet (already playing when Spotify started, or after the spaces
+    // were reset) belongs to the space you're in. No player event says so, so check directly.
+    function syncPlayback() {
+      if (switcher.busy) return;
       const state = ctx.player.getState();
-      if (!state.isPaused) onPlayback(state);
+      const s = store.get();
+      const owner = s.spaces.some((x) => x.id === s.playedIn) ? s.playedIn : null;
+      if (state.trackUri && owner === null) store.set(setPlayedIn(s, s.currentId));
+      onPlayback(state);
+    }
+    const timer = setInterval(() => {
+      if (!ctx.player.getState().isPaused) syncPlayback();
     }, SNAPSHOT_INTERVAL_MS);
-    ctx.onDispose(() => clearInterval(timer));
+    // Spicetify fills in the player state a moment after extensions start.
+    const firstSync = setTimeout(syncPlayback, 2_000);
+    ctx.onDispose(() => {
+      clearInterval(timer);
+      clearTimeout(firstSync);
+    });
     window.addEventListener("beforeunload", () => onPlayback(ctx.player.getState()), {
       signal: ctx.signal,
     });
@@ -321,5 +338,6 @@ export default definePlugin({
     const initial = store.get();
     bridge.apply(currentSpace(initial), initial.settings);
     updateButton();
+    syncPlayback();
   },
 });
