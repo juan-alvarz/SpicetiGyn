@@ -38,6 +38,11 @@ export interface MockOptions {
    * (they read Player.origin._state, which Spotify creates a moment after extensions start).
    */
   originLate?: boolean;
+  /**
+   * false simulates Spotify 1.3.x as seen in the wild: no "songchange"/"onplaypause" events and
+   * an empty Player.data; the state is only on Platform.PlayerAPI._state.
+   */
+  playerEvents?: boolean;
   /** How long a play() call takes before "songchange" fires. */
   latencyMs?: number;
   catalog?: Record<string, CatalogEntry>;
@@ -127,6 +132,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     playerApi: true,
     playUri: true,
     seek: true,
+    playerEvents: true,
     topbar: true,
     topbarAttaches: true,
     playbar: true,
@@ -164,6 +170,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
     return undefined;
   };
   const emit = (type: string) => {
+    if (!o.playerEvents) return;
     for (const fn of [...(listeners.get(type) ?? [])]) (fn as (e: unknown) => void)({ type });
   };
   const loadTrack = (
@@ -200,7 +207,7 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
 
   const Player: Record<string, unknown> = {
     get data() {
-      if (!player.trackUri) return null;
+      if (!player.trackUri || !o.playerEvents) return null;
       const item = { uri: player.trackUri, name: trackName(player.trackUri) };
       return o.playerDataShape === "track"
         ? { track: item, context_uri: player.contextUri, is_paused: player.paused }
@@ -284,6 +291,16 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
       async pause() {
         record("PlayerAPI.pause", []);
         pause();
+      },
+      get _state() {
+        if (!player.trackUri) return null;
+        return {
+          item: { uri: player.trackUri, name: trackName(player.trackUri) },
+          context: { uri: player.contextUri },
+          isPaused: player.paused,
+          positionAsOfTimestamp: player.positionMs,
+          timestamp: Date.now(),
+        };
       },
     };
   }

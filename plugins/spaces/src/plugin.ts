@@ -47,6 +47,8 @@ export const SPACES_STORE: StoreSpec<SpacesState> = {
 
 /** How often the playing space's position is saved, so a crash loses at most this much. */
 const SNAPSHOT_INTERVAL_MS = 15_000;
+/** How often the player is checked for a new song or play/pause, in case no event arrives. */
+const POLL_INTERVAL_MS = 2_000;
 
 export default definePlugin({
   id: "spaces",
@@ -285,15 +287,21 @@ export default definePlugin({
       if (state.trackUri && owner === null) store.set(setPlayedIn(s, s.currentId));
       onPlayback(state);
     }
+    // Don't depend on player events alone: on Spotify 1.3.x they may never arrive. Look at the
+    // player every couple of seconds, react to a new song or play/pause right away, and save
+    // the position of a playing song now and then.
+    let seen = "";
+    let lastSave = 0;
     const timer = setInterval(() => {
-      if (!ctx.player.getState().isPaused) syncPlayback();
-    }, SNAPSHOT_INTERVAL_MS);
-    // Spicetify fills in the player state a moment after extensions start.
-    const firstSync = setTimeout(syncPlayback, 2_000);
-    ctx.onDispose(() => {
-      clearInterval(timer);
-      clearTimeout(firstSync);
-    });
+      const state = ctx.player.getState();
+      const key = `${state.trackUri}|${state.isPaused}`;
+      const due = !state.isPaused && Date.now() - lastSave >= SNAPSHOT_INTERVAL_MS;
+      if (key === seen && !due) return;
+      seen = key;
+      lastSave = Date.now();
+      syncPlayback();
+    }, POLL_INTERVAL_MS);
+    ctx.onDispose(() => clearInterval(timer));
     window.addEventListener("beforeunload", () => onPlayback(ctx.player.getState()), {
       signal: ctx.signal,
     });

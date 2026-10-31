@@ -1,5 +1,5 @@
 import type { Logger } from "../log";
-import type { SpicetifyLike, TrackLike } from "./spicetify";
+import type { PlayerDataLike, SpicetifyLike, TrackLike } from "./spicetify";
 
 export interface PlayerState {
   contextUri: string | null;
@@ -41,20 +41,6 @@ export function createPlayerAdapter(
 ): PlayerAdapter {
   const player = s.Player;
 
-  const currentItem = (): TrackLike | null => {
-    const data = player?.data;
-    if (!data) return null;
-    if (data.item) return data.item;
-    if (data.track) {
-      log.warnOnce(
-        "player.track",
-        "Player.data.item is missing; using Player.data.track (older Spotify).",
-      );
-      return data.track;
-    }
-    return null;
-  };
-
   /**
    * Spicetify's getProgress() and isPlaying() read Player.origin._state, which doesn't exist
    * until Spotify's player has started, a moment after extensions load. They throw until then.
@@ -67,18 +53,63 @@ export function createPlayerAdapter(
     }
   };
 
+  /**
+   * Player.data is filled by Spicetify from Spotify's player events. When those don't arrive
+   * (seen on Spotify 1.3.x), fall back to PlayerAPI's own state, which other extensions use.
+   */
+  const playerData = (): PlayerDataLike | null => {
+    const fromPlayer = player?.data ?? null;
+    if (fromPlayer?.item || fromPlayer?.track) return fromPlayer;
+    const api = s.Platform?.PlayerAPI;
+    const fromApi = safely<unknown>(() => api?._state ?? api?.getState?.(), null);
+    const usable =
+      fromApi !== null &&
+      typeof fromApi === "object" &&
+      typeof (fromApi as { then?: unknown }).then !== "function" &&
+      Boolean((fromApi as PlayerDataLike).item ?? (fromApi as PlayerDataLike).track);
+    if (usable) {
+      log.warnOnce(
+        "player.data",
+        "Player.data is empty; reading Platform.PlayerAPI's state instead.",
+      );
+      return fromApi as PlayerDataLike;
+    }
+    return fromPlayer;
+  };
+
+  const currentItem = (data: PlayerDataLike): TrackLike | null => {
+    if (data.item) return data.item;
+    if (data.track) {
+      log.warnOnce(
+        "player.track",
+        "Player.data.item is missing; using Player.data.track (older Spotify).",
+      );
+      return data.track;
+    }
+    return null;
+  };
+
+  /** Player.getProgress(), or the same sum Spicetify does, from the state's own timestamps. */
+  const progress = (data: PlayerDataLike, paused: boolean): number => {
+    const fromPlayer = safely<number | null>(() => player?.getProgress?.(), null);
+    if (typeof fromPlayer === "number" && Number.isFinite(fromPlayer)) return fromPlayer;
+    const base = data.positionAsOfTimestamp;
+    if (typeof base !== "number") return 0;
+    return base + (paused || typeof data.timestamp !== "number" ? 0 : Date.now() - data.timestamp);
+  };
+
   const getState = (): PlayerState => {
-    const data = player?.data ?? null;
+    const data = playerData();
     if (!data) {
       return { contextUri: null, trackUri: null, trackName: null, positionMs: 0, isPaused: true };
     }
-    const item = currentItem();
+    const item = currentItem(data);
     const paused = data.isPaused ?? data.is_paused ?? !safely(() => player?.isPlaying?.(), false);
     return {
       contextUri: data.context?.uri ?? data.context_uri ?? null,
       trackUri: item?.uri ?? null,
       trackName: item?.name ?? item?.metadata?.title ?? null,
-      positionMs: Math.max(0, Math.round(safely(() => player?.getProgress?.(), 0))),
+      positionMs: Math.max(0, Math.round(progress(data, paused))),
       isPaused: paused,
     };
   };

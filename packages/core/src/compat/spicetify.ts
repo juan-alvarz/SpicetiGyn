@@ -22,6 +22,8 @@ export interface PlayerDataLike {
   context_uri?: string;
   isPaused?: boolean;
   is_paused?: boolean;
+  positionAsOfTimestamp?: number;
+  timestamp?: number;
 }
 
 export interface PlayerLike {
@@ -48,6 +50,9 @@ export interface PlatformLike {
   PlayerAPI?: {
     play?(context: { uri: string }, origins: object, options: object): Promise<unknown>;
     pause?(): Promise<unknown>;
+    /** Spotify's own player state; extensions read it when Player.data isn't set. */
+    _state?: PlayerDataLike | null;
+    getState?(): unknown;
   };
   History?: HistoryLike;
   PlatformData?: { os_name?: string };

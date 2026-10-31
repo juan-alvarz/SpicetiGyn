@@ -46,6 +46,10 @@
   --sp-g3: var(--nl-space-g3, var(--spice-g3));
   /* The card color is captured here, before --spice-main is made transparent below. */
   --sp-card: var(--spice-main);
+  --sp-sidebar: var(--spice-sidebar);
+  --sp-player: var(--spice-player);
+  --sp-elevated: var(--spice-main-elevated);
+  --sp-elevated-highlight: var(--spice-highlight-elevated);
   --sp-glass: rgba(255, 255, 255, 0.1);
   --sp-glass-strong: rgba(255, 255, 255, 0.16);
   --sp-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
@@ -105,8 +109,9 @@ body :where(button, input, textarea, h1, h2, h3, p, span, a):not([class*="spotic
   --background-base: transparent;
   --background-highlight: var(--sp-glass);
   --background-press: var(--sp-glass-strong);
-  --background-elevated-base: var(--sp-glass);
-  --background-elevated-highlight: var(--sp-glass-strong);
+  /* Pop-ups (search suggestions, menus) stay solid so they're readable over the window. */
+  --background-elevated-base: var(--sp-elevated);
+  --background-elevated-highlight: var(--sp-elevated-highlight);
   --background-tinted-base: var(--sp-glass);
   --background-tinted-highlight: var(--sp-glass-strong);
   --spice-main: transparent;
@@ -130,10 +135,29 @@ body :where(button, input, textarea, h1, h2, h3, p, span, a):not([class*="spotic
 }
 
 /* …and the main view is the one floating card, back on the theme's card color. */
+/* Spotify uses these colors for foreground details too (the icon on a round play button, the
+   text on a selected chip), so the card gets every one of them back, not just its surface. */
 :is(.main-view-container, .Root__main-view),
 :is(.main-view-container, .Root__main-view) .encore-dark-theme {
   --background-base: var(--sp-card);
   --spice-main: var(--sp-card);
+  --spice-sidebar: var(--sp-sidebar);
+  --spice-player: var(--sp-player);
+}
+
+/* The same details outside the card: buttons, selected chips and pop-ups in the see-through
+   areas keep Spotify's original colors. */
+:is(.Root, .Root__top-container)
+  :is(
+    [data-encore-id="buttonPrimary"],
+    [data-encore-id="chip"],
+    [role="dialog"],
+    [role="listbox"],
+    [role="menu"]
+  ) {
+  --spice-main: var(--sp-card);
+  --spice-sidebar: var(--sp-sidebar);
+  --spice-player: var(--sp-player);
 }
 
 :is(.main-view-container, .Root__main-view) {

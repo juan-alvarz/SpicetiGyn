@@ -71,6 +71,23 @@ describe("Spaces plugin", () => {
     );
   });
 
+  it("records songs even when Spotify sends no player events (Spotify 1.3.x)", async () => {
+    const { controls, saved } = await boot({ playerEvents: false });
+    controls.load("spotify:playlist:deepwork", "spotify:track:machinery", { positionMs: 30_000 });
+    await waitFor(() => saved().spaces[0].snapshot?.trackUri === "spotify:track:machinery", 5_000);
+    expect(saved().playedIn).toBe("focus");
+
+    controls.press("mod+alt+2");
+    await waitFor(() => root.dataset.nlSpace === "chill" && !("nlSwitching" in root.dataset));
+    controls.load("spotify:playlist:slowevening", "spotify:track:tea");
+    await waitFor(() => saved().spaces[1].snapshot?.trackUri === "spotify:track:tea", 5_000);
+    // Focus kept its own song.
+    expect(saved().spaces[0].snapshot).toMatchObject({
+      trackUri: "spotify:track:machinery",
+      positionMs: 30_000,
+    });
+  }, 15_000);
+
   it("starts with one space named Spotify on a fresh install", async () => {
     await boot({}, {});
     expect(root.dataset.nlSpace).toBe("spotify");
