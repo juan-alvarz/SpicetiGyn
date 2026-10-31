@@ -338,6 +338,11 @@ export default definePlugin({
     const initial = store.get();
     bridge.apply(currentSpace(initial), initial.settings);
     updateButton();
-    syncPlayback();
+    try {
+      syncPlayback();
+    } catch (error) {
+      // Never let a playback check stop Spaces from starting; the timers try again.
+      ctx.log.warn("Couldn't read the player at startup", error);
+    }
   },
 });

@@ -55,16 +55,31 @@ export function createPlayerAdapter(
     return null;
   };
 
+  /**
+   * Spicetify's getProgress() and isPlaying() read Player.origin._state, which doesn't exist
+   * until Spotify's player has started, a moment after extensions load. They throw until then.
+   */
+  const safely = <T>(read: () => T | undefined, fallback: T): T => {
+    try {
+      return read() ?? fallback;
+    } catch {
+      return fallback;
+    }
+  };
+
   const getState = (): PlayerState => {
     const data = player?.data ?? null;
+    if (!data) {
+      return { contextUri: null, trackUri: null, trackName: null, positionMs: 0, isPaused: true };
+    }
     const item = currentItem();
-    const paused = data?.isPaused ?? data?.is_paused ?? !(player?.isPlaying?.() ?? false);
+    const paused = data.isPaused ?? data.is_paused ?? !safely(() => player?.isPlaying?.(), false);
     return {
-      contextUri: data?.context?.uri ?? data?.context_uri ?? null,
+      contextUri: data.context?.uri ?? data.context_uri ?? null,
       trackUri: item?.uri ?? null,
       trackName: item?.name ?? item?.metadata?.title ?? null,
-      positionMs: Math.max(0, Math.round(player?.getProgress?.() ?? 0)),
-      isPaused: data ? paused : true,
+      positionMs: Math.max(0, Math.round(safely(() => player?.getProgress?.(), 0))),
+      isPaused: paused,
     };
   };
 

@@ -33,6 +33,11 @@ export interface MockOptions {
    * find the top bar to put them in.
    */
   topbarAttaches?: boolean;
+  /**
+   * Like Spicetify, make getProgress() and isPlaying() throw until the first track loads
+   * (they read Player.origin._state, which Spotify creates a moment after extensions start).
+   */
+  originLate?: boolean;
   /** How long a play() call takes before "songchange" fires. */
   latencyMs?: number;
   catalog?: Record<string, CatalogEntry>;
@@ -201,13 +206,21 @@ export function createSpicetifyMock(options: MockOptions = {}): SpicetifyMock {
         ? { track: item, context_uri: player.contextUri, is_paused: player.paused }
         : { item, context: { uri: player.contextUri }, isPaused: player.paused };
     },
-    getProgress: () => player.positionMs,
+    getProgress: () => {
+      if (o.originLate && !player.trackUri)
+        throw new TypeError("Cannot read properties of undefined (reading '_state')");
+      return player.positionMs;
+    },
     getVolume: () => player.volume,
     setVolume(v: number) {
       record("Player.setVolume", [v]);
       player.volume = v;
     },
-    isPlaying: () => !player.paused,
+    isPlaying: () => {
+      if (o.originLate && !player.trackUri)
+        throw new TypeError("Cannot read properties of undefined (reading '_state')");
+      return !player.paused;
+    },
     pause() {
       record("Player.pause", []);
       pause();

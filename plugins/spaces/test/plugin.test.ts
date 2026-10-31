@@ -61,6 +61,16 @@ describe("Spaces plugin", () => {
     expect(controls.bindings()).toEqual(Array.from({ length: 9 }, (_, i) => `mod+alt+${i + 1}`));
   });
 
+  it("starts while Spotify's player isn't ready yet (Spicetify's getProgress throws)", async () => {
+    const { controls } = await boot({ originLate: true });
+    expect(document.querySelector("#Desktop_LeftSidebar_Id .nl-spaces-dock")).not.toBeNull();
+    controls.load("spotify:playlist:deepwork", "spotify:track:grid");
+    document.querySelector<HTMLButtonElement>('.nl-dock-btn[data-space="focus"]')?.click();
+    expect(document.querySelector(".nl-spaces-now")?.textContent).toBe(
+      "Playing in Focus: Grid Lines",
+    );
+  });
+
   it("starts with one space named Spotify on a fresh install", async () => {
     await boot({}, {});
     expect(root.dataset.nlSpace).toBe("spotify");
